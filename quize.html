@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Generator</title>
+    <style>
+        :root {
+            --primary: #6200ea;
+            --background: #f4f4f9;
+            --surface: #ffffff;
+            --text: #333333;
+            --correct: #4CAF50; /* Green */
+            --wrong: #f44336; /* Red */
+            --actual-correct: #2196F3; /* Blue */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            width: 100%;
+            padding: 1rem 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .nav-buttons {
+            margin-top: 10px;
+        }
+
+        .nav-buttons button {
+            background: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+
+        .nav-buttons button.active, .nav-buttons button:hover {
+            background: white;
+            color: var(--primary);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Form Styles */
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #4500b5;
+        }
+
+        .btn:disabled {
+            background-color: #9e9e9e;
+            cursor: not-allowed;
+        }
+
+        /* Quiz List Styles */
+        .quiz-item {
+            background: var(--background);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 5px solid var(--primary);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .quiz-item:hover {
+            transform: translateX(5px);
+        }
+
+        /* Active Quiz Styles */
+        .progress-bar {
+            text-align: right;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            /* Font-weight normal so only AI-selected keywords are bolded */
+            font-weight: normal; 
+        }
+
+        /* Styling the bold keywords chosen by AI */
+        .question-text strong {
+            font-weight: bold;
+            color: #111;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: var(--background);
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: left;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        /* Colors for Answer States */
+        .option-btn.correct { background-color: var(--correct); color: white; border-color: var(--correct); }
+        .option-btn.wrong { background-color: var(--wrong); color: white; border-color: var(--wrong); }
+        .option-btn.actual-correct { background-color: var(--actual-correct); color: white; border-color: var(--actual-correct); }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            border-radius: 4px;
+        }
+
+        .quiz-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        /* Result Styles */
+        .result-container {
+            text-align: center;
+        }
+        .score-display {
+            font-size: 3rem;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        #loading {
+            text-align: center;
+            color: var(--primary);
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>AI Study Assistant</h1>
+        <div class="nav-buttons">
+            <button id="nav-quiz" class="active" onclick="switchTab('quiz')">Quizzes (Default)</button>
+            <button id="nav-info" onclick="switchTab('info')">Add Information</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- INFORMATION SECTION -->
+        <div id="section-info" class="hidden">
+            <h2>Add New Information</h2>
+            <p>Paste your text below, and AI will generate a quiz based on it.</p>
+            <input type="text" id="topic-title" placeholder="Enter Topic Title (e.g., Photosynthesis)">
+            <textarea id="topic-content" placeholder="Paste your informational text or paragraphs here..."></textarea>
+            <button class="btn" id="generate-btn" onclick="generateQuiz()">Generate Quiz</button>
+            <div id="loading" class="hidden">Analyzing text and generating questions with AI... Please wait.</div>
+        </div>
+
+        <!-- QUIZ LIST SECTION -->
+        <div id="section-quiz-list">
+            <h2>Available Quizzes</h2>
+            <div id="quiz-list-container">
+                <p>No quizzes available yet. Go to 'Add Information' to create one!</p>
+            </div>
+        </div>
+
+        <!-- ACTIVE QUIZ INTERFACE -->
+        <div id="section-active-quiz" class="hidden">
+            <h2 id="active-quiz-title">Quiz Title</h2>
+            <div class="progress-bar" id="quiz-progress">Question 1 of 5</div>
+            
+            <div class="question-text" id="question-text">Question goes here?</div>
+            <div class="options-container" id="options-container">
+                <!-- Options injected by JS -->
+            </div>
+            
+            <div id="explanation-container" class="explanation hidden">
+                <strong>Explanation:</strong> <span id="explanation-text"></span>
+            </div>
+
+            <div class="quiz-navigation">
+                <button class="btn" id="btn-prev" onclick="navigateQuiz(-1)">Previous</button>
+                <button class="btn" id="btn-next" onclick="navigateQuiz(1)">Next</button>
+                <button class="btn hidden" id="btn-finish" onclick="finishQuiz()">Finish Quiz</button>
+            </div>
+        </div>
+
+        <!-- RESULT SECTION -->
+        <div id="section-result" class="hidden result-container">
+            <h2>Quiz Completed!</h2>
+            <div class="score-display">Score: <span id="final-score">0</span> / <span id="total-questions">0</span></div>
+            <button class="btn" onclick="switchTab('quiz')">Back to Quizzes</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const API_KEY = 'AIzaSyBHpwrO1ha_ZDAlnLqZn4l7Ljv62AA9p0s'; 
+
+        // --- STATE MANAGEMENT ---
+        // Load saved quizzes from browser storage, or start empty if none exist
+        let quizzes = JSON.parse(localStorage.getItem('myAIQuizzes')) || []; 
+        let activeQuiz = null; 
+        let currentQuestionIndex = 0;
+        let currentScore = 0;
+        let userAnswers = {}; 
+
+        // Initialize App on Load
+        window.onload = () => {
+            renderQuizList();
+        };
+
+        // --- NAVIGATION LOGIC ---
+        function switchTab(tab) {
+            document.getElementById('section-info').classList.add('hidden');
+            document.getElementById('section-quiz-list').classList.add('hidden');
+            document.getElementById('section-active-quiz').classList.add('hidden');
+            document.getElementById('section-result').classList.add('hidden');
+            
+            document.getElementById('nav-info').classList.remove('active');
+            document.getElementById('nav-quiz').classList.remove('active');
+
+            if (tab === 'info') {
+                document.getElementById('section-info').classList.remove('hidden');
+                document.getElementById('nav-info').classList.add('active');
+            } else if (tab === 'quiz') {
+                document.getElementById('section-quiz-list').classList.remove('hidden');
+                document.getElementById('nav-quiz').classList.add('active');
+                renderQuizList();
+            }
+        }
+
+        // --- AI INTEGRATION LOGIC ---
+        async function generateQuiz() {
+            const titleInput = document.getElementById('topic-title').value.trim();
+            const textInput = document.getElementById('topic-content').value.trim();
+            const generateBtn = document.getElementById('generate-btn');
+            const loading = document.getElementById('loading');
+
+            if (!titleInput || !textInput) {
+                alert("Please enter both a title and information text.");
+                return;
+            }
+
+            if (API_KEY === 'YOUR_GEMINI_API_KEY_HERE') {
+                alert("Error: You need to insert your Gemini API Key in the JavaScript code.");
+                return;
+            }
+
+            generateBtn.disabled = true;
+            loading.classList.remove('hidden');
+
+            const prompt = `Analyze the following text and generate as many high-quality multiple-choice questions as possible to thoroughly cover all the facts provided. 
+            
+            Strict Rules for Questions:
+            1. Keep questions brief, concise, and to the point.
+            2. Test only ONE single fact or concept per question. Do NOT merge multiple facts into a single question.
+            3. Generate the maximum number of questions possible based on the text length without repeating yourself.
+            4. Identify the most important keywords or phrases in the question and wrap them in HTML <strong> tags to make them bold. Leave the rest of the question text normal. Example: "Which city is known as the <strong>Pink City</strong>?"
+
+            Return the output STRICTLY as a JSON array of objects. 
+            Each object must have these exactly named keys: 
+            "question" (string containing <strong> tags), 
+            "options" (array of 4 strings), 
+            "answerIndex" (integer 0-3 representing the correct option), 
+            "explanation" (string explaining why the answer is correct).
+            Do not include markdown tags like \`\`\`json. Only output raw JSON.
+            
+            Text: ${textInput}`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) throw new Error(data.error.message || "Failed to fetch from API");
+
+                const jsonString = data.candidates[0].content.parts[0].text;
+                const generatedQuestions = JSON.parse(jsonString);
+
+                // Save to quizzes array
+                const newQuiz = {
+                    id: Date.now(),
+                    title: titleInput,
+                    questions: generatedQuestions
+                };
+                quizzes.push(newQuiz);
+
+                // SAVE TO LOCAL BROWSER STORAGE
+                localStorage.setItem('myAIQuizzes', JSON.stringify(quizzes));
+
+                // Reset Form
+                document.getElementById('topic-title').value = '';
+                document.getElementById('topic-content').value = '';
+                
+                alert(`Success! Generated ${generatedQuestions.length} questions and saved them.`);
+                switchTab('quiz');
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while generating the quiz. Check console for details.");
+            } finally {
+                generateBtn.disabled = false;
+                loading.classList.add('hidden');
+            }
+        }
+
+        // --- QUIZ LIST LOGIC ---
+        function renderQuizList() {
+            const container = document.getElementById('quiz-list-container');
+            container.innerHTML = '';
+
+            if (quizzes.length === 0) {
+                container.innerHTML = `<p>No quizzes available yet. Go to 'Add Information' to create one!</p>`;
+                return;
+            }
+
+            // Optional: Add a clear button to wipe saved quizzes
+            const clearBtn = document.createElement('button');
+            clearBtn.textContent = 'Clear All Saved Quizzes';
+            clearBtn.className = 'btn';
+            clearBtn.style.marginBottom = '15px';
+            clearBtn.style.backgroundColor = '#f44336'; // Red
+            clearBtn.onclick = () => {
+                if(confirm("Are you sure you want to delete all saved quizzes?")) {
+                    localStorage.removeItem('myAIQuizzes');
+                    quizzes = [];
+                    renderQuizList();
+                }
+            };
+            container.appendChild(clearBtn);
+
+            // Render existing quizzes
+            quizzes.forEach((quiz) => {
+                const div = document.createElement('div');
+                div.className = 'quiz-item';
+                div.innerHTML = `<h3>${quiz.title}</h3><p>${quiz.questions.length} Questions</p>`;
+                div.onclick = () => startQuiz(quiz.id);
+                container.appendChild(div);
+            });
+        }
+
+        // --- ACTIVE QUIZ LOGIC ---
+        function startQuiz(quizId) {
+            activeQuiz = quizzes.find(q => q.id === quizId);
+            currentQuestionIndex = 0;
+            currentScore = 0;
+            userAnswers = {}; 
+
+            document.getElementById('section-quiz-list').classList.add('hidden');
+            document.getElementById('section-active-quiz').classList.remove('hidden');
+            document.getElementById('active-quiz-title').textContent = activeQuiz.title;
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = activeQuiz.questions[currentQuestionIndex];
+            
+            document.getElementById('quiz-progress').textContent = `Question ${currentQuestionIndex + 1} of ${activeQuiz.questions.length}`;
+            
+            // USING innerHTML INSTEAD OF textContent TO RENDER THE <strong> TAGS
+            document.getElementById('question-text').innerHTML = q.question;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = optText;
+                btn.onclick = () => handleAnswer(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanation-container').classList.add('hidden');
+
+            document.getElementById('btn-prev').disabled = currentQuestionIndex === 0;
+            
+            if (currentQuestionIndex === activeQuiz.questions.length - 1) {
+                document.getElementById('btn-next').classList.add('hidden');
+                document.getElementById('btn-finish').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-next').classList.remove('hidden');
+                document.getElementById('btn-finish').classList.add('hidden');
+            }
+
+            if (userAnswers[currentQuestionIndex] !== undefined) {
+                applyAnswerColors(userAnswers[currentQuestionIndex]);
+            }
+        }
+
+        function handleAnswer(selectedIndex) {
+            if (userAnswers[currentQuestionIndex] !== undefined) return;
+
+            const q = activeQuiz.questions[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedIndex; 
+
+            if (selectedIndex === q.answerIndex) {
+                currentScore++;
+            }
+
+            applyAnswerColors(selectedIndex);
+        }
+
+        function applyAnswerColors(selectedIndex) {
+            const q = activeQuiz.questions[currentQuestionIndex];
+            const buttons = document.getElementById('options-container').children;
+
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                
+                if (i === q.answerIndex) {
+                    if (selectedIndex === q.answerIndex) {
+                        buttons[i].classList.add('correct'); 
+                    } else {
+                        buttons[i].classList.add('actual-correct'); 
+                    }
+                } else if (i === selectedIndex && selectedIndex !== q.answerIndex) {
+                    buttons[i].classList.add('wrong'); 
+                }
+            }
+
+            const explanationContainer = document.getElementById('explanation-container');
+            document.getElementById('explanation-text').textContent = q.explanation;
+            explanationContainer.classList.remove('hidden');
+        }
+
+        function navigateQuiz(direction) {
+            currentQuestionIndex += direction;
+            renderQuestion();
+        }
+
+        function finishQuiz() {
+            document.getElementById('section-active-quiz').classList.add('hidden');
+            document.getElementById('section-result').classList.remove('hidden');
+            
+            document.getElementById('final-score').textContent = currentScore;
+            document.getElementById('total-questions').textContent = activeQuiz.questions.length;
+        }
+    </script>
+</body>
+</html>

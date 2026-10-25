@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Concentration Tracker</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: rgba(255, 255, 255, 0.6);
+    user-select: none;
+  }
+
+  /* The Main Focus Dot */
+  #dot {
+    width: 12px;
+    height: 12px;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+    z-index: 5;
+  }
+
+  /* UI Container */
+  #ui-container {
+    position: absolute;
+    top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: opacity 0.8s ease, filter 0.8s ease;
+    z-index: 10;
+  }
+
+  #ui-container.hidden {
+    opacity: 0;
+    filter: blur(8px);
+    pointer-events: none;
+  }
+
+  #timer {
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: 3px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+  }
+
+  button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+  }
+
+  button:hover {
+    border-color: rgba(255, 255, 255, 0.8);
+    color: #fff;
+  }
+
+  .active-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #fff;
+    color: #fff;
+  }
+
+  /* Distraction Canvas */
+  #distraction-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Lets clicks pass through to the body */
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+
+  #distraction-layer.visible {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+  <canvas id="distraction-layer"></canvas>
+
+  <div id="ui-container">
+    <div id="timer">00:00</div>
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn">Stop</button>
+      <button id="distractBtn">Distractions: OFF</button>
+    </div>
+  </div>
+
+  <div id="dot"></div>
+
+  <script>
+    // --- Timer UI Logic ---
+    let seconds = 0;
+    let timerInterval = null;
+    let hideTimeout = null;
+    let isRunning = false;
+    let distractionsEnabled = false;
+
+    const uiContainer = document.getElementById('ui-container');
+    const timerDisplay = document.getElementById('timer');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const distractBtn = document.getElementById('distractBtn');
+    const canvas = document.getElementById('distraction-layer');
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function hideUI() {
+      if (isRunning) uiContainer.classList.add('hidden');
+    }
+
+    function showUI() {
+      uiContainer.classList.remove('hidden');
+      clearTimeout(hideTimeout);
+      if (isRunning) hideTimeout = setTimeout(hideUI, 1000);
+    }
+
+    function toggleTimer() {
+      if (isRunning) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        startBtn.textContent = 'Resume';
+        canvas.classList.remove('visible'); // Hide distractions on pause
+        showUI();
+      } else {
+        isRunning = true;
+        startBtn.textContent = 'Pause';
+        if (distractionsEnabled) canvas.classList.add('visible'); // Show distractions if enabled
+        
+        timerInterval = setInterval(() => {
+          seconds++;
+          timerDisplay.textContent = formatTime(seconds);
+        }, 1000);
+        hideTimeout = setTimeout(hideUI, 1000);
+      }
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      clearTimeout(hideTimeout);
+      isRunning = false;
+      seconds = 0;
+      timerDisplay.textContent = formatTime(seconds);
+      startBtn.textContent = 'Start';
+      canvas.classList.remove('visible'); // Turn off distractions
+      showUI();
+    }
+
+    distractBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      distractionsEnabled = !distractionsEnabled;
+      if (distractionsEnabled) {
+        distractBtn.textContent = 'Distractions: ON';
+        distractBtn.classList.add('active-btn');
+        if (isRunning) canvas.classList.add('visible');
+      } else {
+        distractBtn.textContent = 'Distractions: OFF';
+        distractBtn.classList.remove('active-btn');
+        canvas.classList.remove('visible');
+      }
+    });
+
+    startBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleTimer(); });
+    stopBtn.addEventListener('click', (e) => { e.stopPropagation(); stopTimer(); });
+    document.body.addEventListener('click', showUI);
+    document.body.addEventListener('touchstart', showUI);
+
+    // --- Distraction Animation Logic ---
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const colors = ['#FF3B30', '#34C759', '#007AFF', '#FFCC00', '#AF52DE'];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.radius = Math.random() * 6 + 4;
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        // Keep them moving slowly
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Bounce off walls
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+      }
+    }
+
+    // Create 15 distracting dots
+    for (let i = 0; i < 15; i++) {
+      particles.push(new Particle());
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animate);
+    }
+    animate(); // Start animation loop (but it stays invisible until the canvas class is toggled)
+  </script>
+</body>
+</html>

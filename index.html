@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Game Hub</title>
+    <style>
+        body { 
+            font-family: system-ui, sans-serif; 
+            background-color: #121212; 
+            color: #ffffff; 
+            padding: 20px; 
+        }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 15px; 
+            margin-top: 20px;
+        }
+        .card { 
+            background: #2a2a2a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            text-align: center; 
+            text-decoration: none; 
+            color: #4CAF50; 
+            font-weight: bold; 
+            text-transform: capitalize;
+            border: 1px solid #333;
+            transition: 0.2s;
+        }
+        .card:hover { 
+            background: #333; 
+            border-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 My Game Hub</h1>
+    <p>Select a game to play:</p>
+    
+    <div id="game-container" class="grid">Loading games...</div>
+
+    <script>
+        // --- CHANGE THESE TWO VARIABLES ---
+        const username = 'xiaoi-11'; 
+        const repo = 'my-mini-games';
+        // ----------------------------------
+
+        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/`;
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(files => {
+                const container = document.getElementById('game-container');
+                container.innerHTML = ''; // Clear the "Loading..." text
+                
+                files.forEach(file => {
+                    // Only pick .html files and ignore the index.html hub itself
+                    if (file.name.endsWith('.html') && file.name !== 'index.html') {
+                        const link = document.createElement('a');
+                        link.href = file.name;
+                        link.className = 'card';
+                        
+                        // Clean up the name for the button (e.g., "tic tac toe.html" -> "Tic tac toe")
+                        let displayName = file.name.replace('.html', '').replace(/-/g, ' ');
+                        link.textContent = displayName;
+                        
+                        container.appendChild(link);
+                    }
+                });
+            })
+            .catch(error => {
+                document.getElementById('game-container').innerHTML = 'Error loading games. Make sure the repo is public.';
+                console.error(error);
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CalcForge AI — Infinite Calculation Trainer</title>
+    <style>
+        :root {
+            --bg-main: #090b10;
+            --bg-card: #121620;
+            --bg-elevated: #1a202e;
+            --border-color: #262f45;
+            --text-main: #f0f4f8;
+            --text-muted: #8b9bb4;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* TOP PERSISTENT CONTROL BAR */
+        .top-bar {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .app-title {
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .nav-btn {
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .controls-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .stepper-group {
+            display: flex;
+            align-items: center;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 4px 6px;
+            gap: 4px;
+        }
+
+        .stepper-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 0 6px;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .stepper-val {
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        .step-btn {
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 4px 8px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.15s;
+        }
+
+        .step-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .step-btn:active {
+            transform: scale(0.94);
+        }
+
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* AUKAT / REALITY CHECK CARD */
+        .aukat-card {
+            background: linear-gradient(135deg, #161b29 0%, #0f131d 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .aukat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 14px;
+        }
+
+        .aukat-title-box {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .aukat-subtitle {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .aukat-rank {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .aukat-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-box {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+        }
+
+        .stat-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .text-green { color: var(--success); }
+        .text-red { color: var(--danger); }
+        .text-accent { color: #818cf8; }
+
+        /* CATEGORY GRID */
+        .section-heading {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: -10px;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+        }
+
+        .cat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            background: var(--bg-elevated);
+        }
+
+        .cat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .cat-name {
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .cat-symbol {
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent);
+            background: rgba(99, 102, 241, 0.12);
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cat-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 10px;
+        }
+
+        /* ARENA / PRACTICE VIEW */
+        .arena-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .arena-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .badge {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            padding: 5px 11px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        /* TIMER BAR */
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .timer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .timer-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: var(--bg-main);
+            border-radius: 99px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .timer-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: var(--success);
+            transition: width 0.1s linear, background-color 0.25s ease;
+        }
+
+        /* QUESTION DISPLAY + START TIMER BUTTON */
+        .question-box {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 28px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            position: relative;
+        }
+
+        .question-expr {
+            font-family: var(--font-mono);
+            font-size: clamp(1.5rem, 4.5vw, 2.5rem);
+            font-weight: 800;
+            letter-spacing: 1px;
+            word-break: break-word;
+            line-height: 1.35;
+            user-select: text;
+        }
+
+        .start-calc-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .start-calc-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #041f14;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 26px;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+            transition: transform 0.12s ease, box-shadow 0.15s ease;
+        }
+
+        .start-calc-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
+        }
+
+        .start-calc-btn:active {
+            transform: scale(0.96);
+        }
+
+        .start-calc-hint {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            font-family: var(--font-sans);
+        }
+
+        /* OPTIONS GRID */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        @media (max-width: 540px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .option-btn {
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 16px;
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.12);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .option-btn.correct {
+            background: rgba(16, 185, 129, 0.2) !important;
+            border-color: var(--success) !important;
+            color: #34d399 !important;
+            opacity: 1 !important;
+        }
+
+        .option-btn.wrong {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: var(--danger) !important;
+            color: #f87171 !important;
+            opacity: 1 !important;
+        }
+
+        .opt-index {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: var(--bg-main);
+            padding: 4px 8px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* TIMEOUT & FEEDBACK BANNER */
+        .feedback-panel {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feedback-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .feedback-msg {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .action-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .ai-box {
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+            font-size: 0.88rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            font-family: var(--font-sans);
+        }
+
+        .ai-box strong {
+            color: #a5b4fc;
+        }
+
+        /* MODAL FOR AI KEY & RESET */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 16px;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            max-width: 460px;
+            width: 100%;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .input-field {
+            width: 100%;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP BAR: ALWAYS VISIBLE FOR INSTANT LEVEL & TIME CONTROL -->
+    <header class="top-bar">
+        <div class="brand-group">
+            <span class="app-title" onclick="showDashboard()">⚡ CalcForge AI</span>
+            <button id="backDashBtn" class="nav-btn hidden" onclick="showDashboard()">← Dashboard</button>
+        </div>
+
+        <div class="controls-wrapper">
+            <!-- UNBOUNDED DIFFICULTY STEPPER -->
+            <div class="stepper-group" title="Difficulty Level (No upper limit)">
+                <div class="stepper-label">
+                    <span>Level</span>
+                    <span class="stepper-val" id="lvlDisplay">1</span>
+                </div>
+                <button class="step-btn" onclick="adjustDifficulty(-5)">-5</button>
+                <button class="step-btn" onclick="adjustDifficulty(-1)">-1</button>
+                <button class="step-btn" onclick="adjustDifficulty(1)">+1</button>
+                <button class="step-btn" onclick="adjustDifficulty(5)">+5</button>
+                <button class="step-btn" onclick="adjustDifficulty(10)">+10</button>
+            </div>
+
+            <!-- TIME OFFSET STEPPER -->
+            <div class="stepper-group" title="Adjust question timer allowance">
+                <div class="stepper-label">
+                    <span>Time Mod</span>
+                    <span class="stepper-val" id="timeModDisplay">+0s</span>
+                </div>
+                <button class="step-btn" onclick="adjustTimeOffset(-5)">-5s</button>
+                <button class="step-btn" onclick="adjustTimeOffset(-2)">-2s</button>
+                <button class="step-btn" onclick="adjustTimeOffset(2)">+2s</button>
+                <button class="step-btn" onclick="adjustTimeOffset(5)">+5s</button>
+            </div>
+
+            <button class="nav-btn" onclick="toggleModal(true)">⚙ AI / Reset</button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="container">
+
+        <!-- VIEW 1: DASHBOARD -->
+        <section id="dashboardView" style="display: flex; flex-direction: column; gap: 22px;">
+            
+            <!-- MINIMALIST "AUKAT" STATUS CARD -->
+            <div class="aukat-card">
+                <div class="aukat-header">
+                    <div class="aukat-title-box">
+                        <span class="aukat-subtitle">Current Standing (Aukat Meter)</span>
+                        <div class="aukat-rank" id="aukatRankTitle">⏳ Analyzing...</div>
+                        <span class="aukat-desc" id="aukatRankDesc">Solve questions to calibrate your real calculation level.</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="aukat-subtitle">Power Score</span>
+                        <div class="stat-value text-accent" id="powerScoreDisplay">0</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <span class="stat-label">TODAY</span>
+                        <span class="stat-value" id="statTodayTotal">0</span>
+                        <span class="stat-sub">
+                            <span class="text-green" id="statTodayCorrect">0 ✓</span> · 
+                            <span class="text-red" id="statTodayWrong">0 ✗</span>
+                        </span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">YESTERDAY</span>
+                        <span class="stat-value" id="statYestTotal">0</span>
+                        <span class="stat-sub" id="statYestSub">0 ✓ · 0 ✗</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">ALL-TIME ACCURACY</span>
+                        <span class="stat-value" id="statAllAccuracy">0%</span>
+                        <span class="stat-sub" id="statAllTotal">0 total solved</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">AVG SPEED (TODAY)</span>
+                        <span class="stat-value" id="statAvgSpeed">0.0s</span>
+                        <span class="stat-sub">per question</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORY SELECTION -->
+            <div class="section-heading">Select Category to Start Grinding</div>
+            <div class="category-grid" id="categoryGrid"></div>
+        </section>
+
+        <!-- VIEW 2: PRACTICE ARENA -->
+        <section id="arenaView" class="arena-card hidden">
+            <div class="arena-meta">
+                <span class="badge" id="arenaCatBadge">MIXED</span>
+                <span class="badge" id="arenaStreakBadge">Streak: 0 🔥</span>
+                <span class="badge" id="arenaAllocatedBadge">Target: 15s</span>
+            </div>
+
+            <!-- DYNAMIC TIMER BAR -->
+            <div class="timer-container">
+                <div class="timer-header">
+                    <span id="timerStatusText">Waiting to Start...</span>
+                    <span id="timerSecondsText">0.0s</span>
+                </div>
+                <div class="timer-bar-bg">
+                    <div class="timer-bar-fill" id="timerBarFill"></div>
+                </div>
+            </div>
+
+            <!-- QUESTION EXPRESSION + START BUTTON -->
+            <div class="question-box">
+                <div class="question-expr" id="questionExprText">Loading...</div>
+                <div class="start-calc-wrap" id="startCalcWrap">
+                    <button id="startCalcBtn" class="start-calc-btn" onclick="beginCalculationPhase()">
+                        ▶ Start Timer
+                    </button>
+                    <span class="start-calc-hint">Write down the question on paper first, then click Start (or press Space)</span>
+                </div>
+            </div>
+
+            <!-- 4 PEN-AND-PAPER OPTIONS -->
+            <div class="options-grid" id="optionsGrid"></div>
+
+            <!-- FEEDBACK / TIMEOUT / AI TRICK PANEL -->
+            <div id="feedbackPanel" class="feedback-panel hidden">
+                <div class="feedback-row">
+                    <span class="feedback-msg" id="feedbackMsg"></span>
+                    <div class="action-btns">
+                        <button id="tryAgainBtn" class="btn-warning hidden" onclick="retrySameQuestion()">↻ Try Again (Counted as Failed)</button>
+                        <button id="addTimeBtn" class="btn-secondary hidden" onclick="addExtraTime(15)">+15s Extra Time</button>
+                        <button id="aiExplainBtn" class="btn-secondary" onclick="showShortcutTrick()">💡 Mental / Paper Shortcut</button>
+                        <button id="nextQuestionBtn" class="btn-primary" onclick="nextQuestion()">Next Question →</button>
+                    </div>
+                </div>
+                <div id="aiTrickBox" class="ai-box hidden"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SETTINGS / AI MODAL -->
+    <div id="settingsModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <h3 style="font-size: 1.1rem;">⚙ AI Coach & Data Settings</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+                Built-in algorithmic Vedic/Paper math breakdowns work offline automatically. Optionally, paste a free <strong>Google Gemini API Key</strong> below if you want live LLM step-by-step coaching when you click "Mental / Paper Shortcut".
+            </p>
+            <input type="password" id="geminiKeyInput" class="input-field" placeholder="AIzaSy... (Optional Gemini API Key)">
+            <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 6px;">
+                <button class="btn-secondary" style="color: var(--danger); border-color: var(--danger);" onclick="resetAllStats()">Reset Stats</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" onclick="toggleModal(false)">Close</button>
+                    <button class="btn-primary" onclick="saveSettings()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*************************************************************
+         * 1. STATE & LOCALSTORAGE PERSISTENCE
+         *************************************************************/
+        const CATEGORIES = [
+            { id: 'addition', name: 'Addition', symbol: '+', desc: 'Multi-digit & multi-term sums' },
+            { id: 'subtraction', name: 'Subtraction', symbol: '−', desc: 'Borrow-heavy & chain differences' },
+            { id: 'multiplication', name: 'Multiplication', symbol: '×', desc: '2D×2D, 3D×2D, 4D×3D & beyond' },
+            { id: 'division', name: 'Division', symbol: '÷', desc: 'Exact & decimal quotient drills' },
+            { id: 'fraction', name: 'Fractions', symbol: 'a/b', desc: 'Cross-addition, mixed & ratios' },
+            { id: 'mixed', name: 'Mixed BODMAS', symbol: '∑', desc: 'Combined operations & squares' }
+        ];
+
+        const STORAGE_KEY = 'calcforge_v1_state';
+
+        let appState = {
+            difficulty: 1,       // Starts at solid medium pen-paper level, scales to Infinity
+            timeOffset: 0,       // User +/- seconds adjustment
+            geminiApiKey: '',
+            history: {},         // { 'YYYY-MM-DD': { solved, correct, wrong, totalTime } }
+            catStats: {
+                addition: { solved: 0, correct: 0, wrong: 0 },
+                subtraction: { solved: 0, correct: 0, wrong: 0 },
+                multiplication: { solved: 0, correct: 0, wrong: 0 },
+                division: { solved: 0, correct: 0, wrong: 0 },
+                fraction: { solved: 0, correct: 0, wrong: 0 },
+                mixed: { solved: 0, correct: 0, wrong: 0 }
+            }
+        };
+
+        let currentCategory = 'mixed';
+        let currentQuestion = null;
+        let currentStreak = 0;
+
+        // Timer & Phase variables
+        let timerInterval = null;
+        let allocatedSeconds = 15;
+        let remainingSeconds = 15;
+        let questionStartTimestamp = 0;
+        let hasStartedTimer = false;         // Tracks if user clicked "Start Timer" after writing down
+        let currentQuestionPenalized = false; // Ensures a question is counted as failed ONCE even if retried
+        let currentQuestionResolved = false;
+
+        function getDateStr(offsetDays = 0) {
+            const d = new Date();
+            d.setDate(d.getDate() + offsetDays);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function loadState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    appState = { ...appState, ...parsed };
+                    if (appState.difficulty < 1) appState.difficulty = 1;
+                }
+            } catch (e) {
+                console.error('Failed to load state', e);
+            }
+            ensureDayRecord(getDateStr(0));
+            ensureDayRecord(getDateStr(-1));
+            updateTopControlsUI();
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.error('Failed to save state', e);
+            }
+        }
+
+        function ensureDayRecord(dateKey) {
+            if (!appState.history[dateKey]) {
+                appState.history[dateKey] = {
+                    solved: 0,
+                    correct: 0,
+                    wrong: 0,
+                    totalTime: 0
+                };
+            }
+        }
+
+        /*************************************************************
+         * 2. TOP BAR CONTROLS (DIFFICULTY & TIME OFFSET)
+         *************************************************************/
+        function adjustDifficulty(delta) {
+            appState.difficulty = Math.max(1, appState.difficulty + delta);
+            saveState();
+            updateTopControlsUI();
+            renderDashboard();
+            if (!document.getElementById('arenaView').classList.contains('hidden')) {
+                nextQuestion();
+            }
+        }
+
+        function adjustTimeOffset(delta) {
+            appState.timeOffset = appState.timeOffset + delta;
+            saveState();
+            updateTopControlsUI();
+            if (!document.getElementById('arenaView').classList.contains('hidden') && !currentQuestionResolved) {
+                allocatedSeconds = Math.max(3, allocatedSeconds + delta);
+                remainingSeconds = Math.max(1, remainingSeconds + delta);
+                document.getElementById('arenaAllocatedBadge').textContent = `Target: ${allocatedSeconds}s`;
+                updateTimerUI();
+            }
+        }
+
+        function updateTopControlsUI() {
+            document.getElementById('lvlDisplay').textContent = appState.difficulty;
+            const sign = appState.timeOffset >= 0 ? '+' : '';
+            document.getElementById('timeModDisplay').textContent = `${sign}${appState.timeOffset}s`;
+        }
+
+        /*************************************************************
+         * 3. DASHBOARD & "AUKAT" REALITY CHECK ENGINE
+         *************************************************************/
+        function renderDashboard() {
+            const todayKey = getDateStr(0);
+            const yestKey = getDateStr(-1);
+            ensureDayRecord(todayKey);
+            ensureDayRecord(yestKey);
+
+            const today = appState.history[todayKey];
+            const yest = appState.history[yestKey];
+
+            // Today stats
+            document.getElementById('statTodayTotal').textContent = today.solved;
+            document.getElementById('statTodayCorrect').textContent = `${today.correct} ✓`;
+            document.getElementById('statTodayWrong').textContent = `${today.wrong} ✗`;
+
+            // Yesterday stats
+            document.getElementById('statYestTotal').textContent = yest.solved;
+            document.getElementById('statYestSub').textContent = `${yest.correct} ✓ · ${yest.wrong} ✗`;
+
+            // All-time totals
+            let allSolved = 0, allCorrect = 0;
+            Object.values(appState.history).forEach(day => {
+                allSolved += day.solved;
+                allCorrect += day.correct;
+            });
+            const allAcc = allSolved > 0 ? Math.round((allCorrect / allSolved) * 100) : 0;
+            document.getElementById('statAllAccuracy').textContent = `${allAcc}%`;
+            document.getElementById('statAllTotal').textContent = `${allSolved} total attempts`;
+
+            // Today's average speed
+            const avgSpd = today.solved > 0 ? (today.totalTime / today.solved).toFixed(1) : '0.0';
+            document.getElementById('statAvgSpeed').textContent = `${avgSpd}s`;
+
+            // Calculate "Aukat" Standing
+            const todayAcc = today.solved > 0 ? (today.correct / today.solved) : (allSolved > 0 ? allCorrect / allSolved : 0);
+            const effectiveLevel = appState.difficulty;
+            const powerScore = Math.round((effectiveLevel * 12) * (0.4 + Math.pow(todayAcc, 2)) + Math.min(allCorrect, 500));
+            document.getElementById('powerScoreDisplay').textContent = allSolved === 0 ? '0' : powerScore;
+
+            let rankTitle = '🪨 Rusty Beginner';
+            let rankDesc = 'Abhi shuruat hai. Pick a category and solve at least 10 questions on paper.';
+
+            if (allSolved >= 5) {
+                if (todayAcc < 0.55) {
+                    rankTitle = '⚠️ Error-Prone Calculator';
+                    rankDesc = `Accuracy is ${(todayAcc * 100).toFixed(0)}% at Level ${effectiveLevel}. Slow down or drop difficulty by -1 to fix silly carry/borrow mistakes.`;
+                } else if (effectiveLevel <= 3 && todayAcc >= 0.75) {
+                    rankTitle = '⚙️ Warming Up (Pen & Paper)';
+                    rankDesc = `Solid accuracy (${(todayAcc * 100).toFixed(0)}%), but Level ${effectiveLevel} is basic. Hit +1 or +5 on the top bar to push your limits.`;
+                } else if (effectiveLevel <= 8 && todayAcc >= 0.7) {
+                    rankTitle = '🎯 Competitive Exam Ready';
+                    rankDesc = `Handling Level ${effectiveLevel} smoothly at ${avgSpd}s/question. Keep pushing higher levels!`;
+                } else if (effectiveLevel <= 18 && todayAcc >= 0.75) {
+                    rankTitle = '🔥 Human Calculator';
+                    rankDesc = `Crushing heavy multi-digit operations at Level ${effectiveLevel} with ${(todayAcc * 100).toFixed(0)}% precision!`;
+                } else if (effectiveLevel > 18 && todayAcc >= 0.75) {
+                    rankTitle = '👑 Grandmaster Computation Machine';
+                    rankDesc = `Level ${effectiveLevel} mastery. Your pen-and-paper speed is elite.`;
+                } else {
+                    rankTitle = '🛠️ Grinding In Progress';
+                    rankDesc = `Level ${effectiveLevel} | Accuracy ${(todayAcc * 100).toFixed(0)}%. Keep practicing daily to stabilize speed.`;
+                }
+            }
+
+            document.getElementById('aukatRankTitle').textContent = rankTitle;
+            document.getElementById('aukatRankDesc').textContent = rankDesc;
+
+            // Render Category Cards
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = '';
+            CATEGORIES.forEach(cat => {
+                const cStat = appState.catStats[cat.id] || { solved: 0, correct: 0, wrong: 0 };
+                const cAcc = cStat.solved > 0 ? Math.round((cStat.correct / cStat.solved) * 100) : 0;
+                const card = document.createElement('div');
+                card.className = 'cat-card';
+                card.onclick = () => startCategory(cat.id);
+                card.innerHTML = `
+                    <div class="cat-top">
+                        <div>
+                            <div class="cat-name">${cat.name}</div>
+                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">${cat.desc}</div>
+                        </div>
+                        <div class="cat-symbol">${cat.symbol}</div>
+                    </div>
+                    <div class="cat-meta">
+                        <span>Solved: ${cStat.solved}</span>
+                        <span><span class="text-green">${cStat.correct}✓</span> / <span class="text-red">${cStat.wrong}✗</span> (${cAcc}%)</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function showDashboard() {
+            stopTimer();
+            document.getElementById('arenaView').classList.add('hidden');
+            document.getElementById('backDashBtn').classList.add('hidden');
+            document.getElementById('dashboardView').classList.remove('hidden');
+            renderDashboard();
+        }
+
+        function startCategory(catId) {
+            currentCategory = catId;
+            currentStreak = 0;
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('arenaView').classList.remove('hidden');
+            document.getElementById('backDashBtn').classList.remove('hidden');
+            nextQuestion();
+        }
+
+        /*************************************************************
+         * 4. UNBOUNDED QUESTION GENERATOR (MEDIUM TO INFINITE)
+         *************************************************************/
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function randNDigit(digits) {
+            const d = Math.max(1, digits);
+            if (d > 14) {
+                return randInt(Math.pow(10, 12), Math.pow(10, 14) - 1);
+            }
+            const min = Math.pow(10, d - 1);
+            const max = Math.pow(10, d) - 1;
+            return randInt(min, max);
+        }
+
+        function gcd(a, b) {
+            a = Math.abs(a);
+            b = Math.abs(b);
+            while (b) {
+                let t = b;
+                b = a % b;
+                a = t;
+            }
+            return a || 1;
+        }
+
+        function generateQuestion(category, level) {
+            const L = Math.max(1, level);
+            let actualCat = category;
+            if (category === 'mixed') {
+                const pool = ['addition', 'subtraction', 'multiplication', 'division', 'fraction', 'bodmas'];
+                actualCat = pool[randInt(0, pool.length - 1)];
+            }
+
+            let expression = '';
+            let answer = 0;
+            let isFraction = false;
+            let numAns = 0, denAns = 1;
+            let baseTime = 15;
+            let shortcutHint = '';
+
+            if (actualCat === 'addition') {
+                const numTerms = Math.min(7, 2 + Math.floor(L / 4));
+                const baseDigits = 3 + Math.floor((L - 1) / 2);
+                let terms = [];
+                let sum = 0;
+                for (let i = 0; i < numTerms; i++) {
+                    const d = Math.max(2, baseDigits - (i > 1 ? 1 : 0));
+                    const val = randNDigit(d);
+                    terms.push(val);
+                    sum += val;
+                }
+                expression = terms.join(' + ');
+                answer = sum;
+                baseTime = 8 + (baseDigits * numTerms * 1.8);
+                shortcutHint = `<strong>Column Split Method:</strong> Add left-to-right by highest place value first, or group last two digits (${terms.map(t => t % 100).join(' + ')}) to verify the ending quickly.`;
+            }
+
+            else if (actualCat === 'subtraction') {
+                const numTerms = Math.min(5, 2 + Math.floor(L / 5));
+                const digits = 3 + Math.floor((L - 1) / 2);
+                const first = randNDigit(digits + 1);
+                let terms = [first];
+                let currentVal = first;
+
+                for (let i = 1; i < numTerms; i++) {
+                    const sub = randNDigit(Math.max(2, digits - (i > 1 ? 1 : 0)));
+                    if (L > 3 && i % 2 === 0) {
+                        terms.push(`+ ${sub}`);
+                        currentVal += sub;
+                    } else {
+                        terms.push(`− ${sub}`);
+                        currentVal -= sub;
+                    }
+                }
+                expression = terms.join(' ');
+                answer = currentVal;
+                baseTime = 9 + (digits * numTerms * 2.0);
+                shortcutHint = `<strong>Complement Method:</strong> Instead of borrowing across multiple zeros, round the subtracted number up to the nearest 100/1000, subtract, and add back the difference.`;
+            }
+
+            else if (actualCat === 'multiplication') {
+                const d1 = 2 + Math.floor(L / 2);
+                const d2 = 2 + Math.floor((L - 1) / 3);
+                const a = randNDigit(d1);
+                const b = randNDigit(d2);
+                expression = `${a} × ${b}`;
+                answer = a * b;
+                baseTime = 12 + (d1 * d2 * 3.2);
+                const bRound = Math.round(b / 10) * 10;
+                const diff = b - bRound;
+                shortcutHint = `<strong>Distributive Split:</strong> Break ${b} into (${bRound} ${diff >= 0 ? '+ ' + diff : '− ' + Math.abs(diff)}). Compute ${a} × ${bRound} = ${a * bRound}, then ${diff >= 0 ? 'add' : 'subtract'} ${a} × ${Math.abs(diff)} = ${a * Math.abs(diff)}.`;
+            }
+
+            else if (actualCat === 'division') {
+                const divisorDigits = 1 + Math.floor((L + 1) / 3);
+                const quotientDigits = 2 + Math.floor(L / 2);
+                const divisor = randInt(Math.max(12, Math.pow(10, divisorDigits - 1) + 2), Math.pow(10, divisorDigits) - 1);
+                const quotient = randNDigit(quotientDigits);
+                const dividend = divisor * quotient;
+                expression = `${dividend} ÷ ${divisor}`;
+                answer = quotient;
+                baseTime = 12 + (divisorDigits * quotientDigits * 3.5);
+                shortcutHint = `<strong>Range & Last-Digit Verification:</strong> First estimate ${dividend} ÷ ${divisor} ≈ ${Math.floor(quotient / 10) * 10}. Since ${divisor % 10} × ${quotient % 10} ends in ${(divisor * quotient) % 10}, check the quotient digit by digit from the left.`;
+            }
+
+            else if (actualCat === 'fraction') {
+                isFraction = true;
+                const maxDen = Math.min(99, 12 + L * 6);
+                const d1 = randInt(3, maxDen);
+                const d2 = randInt(3, maxDen);
+                const n1 = randInt(2, d1 * 2 + L);
+                const n2 = randInt(2, d2 * 2 + L);
+                const ops = L > 3 ? ['+', '−', '×'] : ['+', '−'];
+                const op = ops[randInt(0, ops.length - 1)];
+
+                if (op === '+') {
+                    numAns = n1 * d2 + n2 * d1;
+                    denAns = d1 * d2;
+                } else if (op === '−') {
+                    numAns = n1 * d2 - n2 * d1;
+                    denAns = d1 * d2;
+                } else {
+                    numAns = n1 * n2;
+                    denAns = d1 * d2;
+                }
+                const g = gcd(numAns, denAns);
+                numAns = numAns / g;
+                denAns = denAns / g;
+                if (denAns < 0) { numAns = -numAns; denAns = -denAns; }
+
+                expression = `(${n1}/${d1}) ${op} (${n2}/${d2})`;
+                answer = denAns === 1 ? `${numAns}` : `${numAns}/${denAns}`;
+                baseTime = 16 + L * 2.5;
+                shortcutHint = `<strong>Butterfly Cross-Method:</strong> Cross compute (${n1}×${d2}) and (${n2}×${d1}), combine over (${d1}×${d2}), then divide numerator & denominator by their GCD (${g}).`;
+            }
+
+            else {
+                const a = randNDigit(2 + Math.floor(L / 3));
+                const b = randInt(11, 25 + L * 4);
+                const c = randNDigit(2 + Math.floor(L / 2));
+                const d = randInt(12, 50 + L * 5);
+                expression = `(${a} × ${b}) + ${c} − ${d}`;
+                answer = (a * b) + c - d;
+                baseTime = 16 + L * 3;
+                shortcutHint = `<strong>BODMAS Priority:</strong> First compute ${a} × ${b} = ${a * b}, then add (${c} − ${d} = ${c - d}) to get ${answer}.`;
+            }
+
+            const options = isFraction
+                ? generateFractionOptions(numAns, denAns)
+                : generateNumericOptions(answer);
+
+            return {
+                category: actualCat.toUpperCase(),
+                expression,
+                answer: String(answer),
+                options,
+                baseTime: Math.round(baseTime),
+                shortcutHint
+            };
+        }
+
+        function generateNumericOptions(correctVal) {
+            const set = new Set([String(correctVal)]);
+            const absVal = Math.abs(correctVal);
+            const mag = Math.max(10, Math.floor(absVal * 0.08));
+
+            const d1 = correctVal + (Math.random() < 0.5 ? 10 : -10);
+            set.add(String(d1));
+
+            const d2 = correctVal + (absVal > 200 ? (Math.random() < 0.5 ? 100 : -100) : 20);
+            set.add(String(d2));
+
+            while (set.size < 4) {
+                const step = randInt(1, Math.max(5, Math.floor(mag / 10))) * 10;
+                const cand = correctVal + (Math.random() < 0.5 ? step : -step);
+                if (cand !== correctVal) set.add(String(cand));
+            }
+
+            return shuffleArray(Array.from(set));
+        }
+
+        function generateFractionOptions(num, den) {
+            const correctStr = den === 1 ? `${num}` : `${num}/${den}`;
+            const set = new Set([correctStr]);
+            let safety = 0;
+            while (set.size < 4 && safety < 30) {
+                safety++;
+                const nMod = num + randInt(-12, 12);
+                const dMod = Math.max(2, den + randInt(-5, 5));
+                if (nMod === 0) continue;
+                const g = gcd(nMod, dMod);
+                const sn = nMod / g;
+                const sd = dMod / g;
+                const str = sd === 1 ? `${sn}` : `${sn}/${sd}`;
+                set.add(str);
+            }
+            return shuffleArray(Array.from(set));
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        /*************************************************************
+         * 5. ARENA ENGINE, "START TIMER" PHASE & PENALTY LOGIC
+         *************************************************************/
+        function nextQuestion() {
+            stopTimer();
+            currentQuestion = generateQuestion(currentCategory, appState.difficulty);
+            currentQuestionPenalized = false;
+            currentQuestionResolved = false;
+            hasStartedTimer = false; // Paused initially so user can copy the question down on paper
+
+            allocatedSeconds = Math.max(3, currentQuestion.baseTime + appState.timeOffset);
+            remainingSeconds = allocatedSeconds;
+
+            // Update Arena UI
+            document.getElementById('arenaCatBadge').textContent = `${currentQuestion.category} · LVL ${appState.difficulty}`;
+            document.getElementById('arenaStreakBadge').textContent = `Streak: ${currentStreak} 🔥`;
+            document.getElementById('arenaAllocatedBadge').textContent = `Target: ${allocatedSeconds}s`;
+            document.getElementById('questionExprText').textContent = `${currentQuestion.expression} = ?`;
+
+            // Show the Start Timer button inside the question box
+            document.getElementById('startCalcWrap').classList.remove('hidden');
+
+            document.getElementById('feedbackPanel').classList.add('hidden');
+            document.getElementById('aiTrickBox').classList.add('hidden');
+            document.getElementById('tryAgainBtn').classList.add('hidden');
+            document.getElementById('addTimeBtn').classList.add('hidden');
+
+            // Render options locked & masked until Start Timer is clicked
+            renderOptions(true, true);
+            updateTimerUI();
+        }
+
+        // Triggered when user finishes writing the question on paper and clicks "▶ Start Timer"
+        function beginCalculationPhase() {
+            if (hasStartedTimer || currentQuestionResolved) return;
+            hasStartedTimer = true;
+            questionStartTimestamp = performance.now();
+
+            // Hide the Start button inside the question box
+            document.getElementById('startCalcWrap').classList.add('hidden');
+
+            // Unlock and reveal the 4 options
+            renderOptions(false, false);
+            startTimer();
+        }
+
+        function renderOptions(disabled = false, maskValues = false) {
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            const labels = ['A', 'B', 'C', 'D'];
+            currentQuestion.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.disabled = disabled;
+                btn.dataset.val = opt;
+                btn.innerHTML = `
+                    <span>${maskValues ? '• • •' : opt}</span>
+                    <span class="opt-index">${labels[idx]}</span>
+                `;
+                btn.onclick = () => submitAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function startTimer() {
+            stopTimer();
+            updateTimerUI();
+            timerInterval = setInterval(() => {
+                remainingSeconds = Math.max(0, remainingSeconds - 0.1);
+                updateTimerUI();
+                if (remainingSeconds <= 0) {
+                    handleTimeout();
+                }
+            }, 100);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimerUI() {
+            const secText = document.getElementById('timerSecondsText');
+            const barFill = document.getElementById('timerBarFill');
+            const statusText = document.getElementById('timerStatusText');
+
+            secText.textContent = `${remainingSeconds.toFixed(1)}s`;
+            const pct = Math.max(0, Math.min(100, (remainingSeconds / allocatedSeconds) * 100));
+            barFill.style.width = `${pct}%`;
+
+            if (!hasStartedTimer) {
+                barFill.style.backgroundColor = 'var(--accent)';
+                statusText.textContent = 'Paused — Write down question, then click Start';
+                return;
+            }
+
+            if (pct > 50) {
+                barFill.style.backgroundColor = 'var(--success)';
+                statusText.textContent = currentQuestionPenalized ? 'Retry Mode (Marked Failed)' : 'Time Remaining';
+            } else if (pct > 22) {
+                barFill.style.backgroundColor = 'var(--warning)';
+            } else {
+                barFill.style.backgroundColor = 'var(--danger)';
+            }
+        }
+
+        // Called when timer hits 0.0s
+        function handleTimeout() {
+            stopTimer();
+            if (!currentQuestionPenalized) {
+                recordAttempt(false);
+                currentQuestionPenalized = true;
+                currentStreak = 0;
+                document.getElementById('arenaStreakBadge').textContent = `Streak: 0 🔥`;
+            }
+
+            document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+
+            const panel = document.getElementById('feedbackPanel');
+            const msg = document.getElementById('feedbackMsg');
+            panel.classList.remove('hidden');
+            msg.innerHTML = `<span class="text-red">⏰ Time's Up! (Counted as Failed)</span> — Try again to finish solving on paper or move to next.`;
+
+            document.getElementById('tryAgainBtn').classList.remove('hidden');
+            document.getElementById('addTimeBtn').classList.remove('hidden');
+        }
+
+        // User clicks "Try Again" on the same question
+        function retrySameQuestion() {
+            if (!currentQuestionPenalized) {
+                recordAttempt(false);
+                currentQuestionPenalized = true;
+                currentStreak = 0;
+            }
+            hasStartedTimer = true;
+            document.getElementById('startCalcWrap').classList.add('hidden');
+            remainingSeconds = allocatedSeconds;
+            document.getElementById('feedbackPanel').classList.add('hidden');
+            renderOptions(false, false);
+            startTimer();
+        }
+
+        // User clicks "+15s Extra Time"
+        function addExtraTime(extraSec) {
+            if (!currentQuestionPenalized) {
+                recordAttempt(false);
+                currentQuestionPenalized = true;
+                currentStreak = 0;
+            }
+            hasStartedTimer = true;
+            document.getElementById('startCalcWrap').classList.add('hidden');
+            allocatedSeconds += extraSec;
+            remainingSeconds += extraSec;
+            document.getElementById('feedbackPanel').classList.add('hidden');
+            renderOptions(false, false);
+            startTimer();
+        }
+
+        function submitAnswer(selectedVal, clickedBtn) {
+            if (!hasStartedTimer || currentQuestionResolved) return;
+            stopTimer();
+
+            const isCorrect = (selectedVal === currentQuestion.answer);
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            const panel = document.getElementById('feedbackPanel');
+            const msg = document.getElementById('feedbackMsg');
+            panel.classList.remove('hidden');
+
+            if (isCorrect) {
+                currentQuestionResolved = true;
+                clickedBtn.classList.add('correct');
+                document.getElementById('tryAgainBtn').classList.add('hidden');
+                document.getElementById('addTimeBtn').classList.add('hidden');
+
+                const elapsed = ((performance.now() - questionStartTimestamp) / 1000).toFixed(1);
+
+                if (!currentQuestionPenalized) {
+                    recordAttempt(true, parseFloat(elapsed));
+                    currentStreak++;
+                    msg.innerHTML = `<span class="text-green">✓ Correct in ${elapsed}s!</span>`;
+                } else {
+                    msg.innerHTML = `<span style="color:var(--warning);">✓ Solved on Retry (${currentQuestion.answer}) — Recorded as Failed in Stats.</span>`;
+                }
+                document.getElementById('arenaStreakBadge').textContent = `Streak: ${currentStreak} 🔥`;
+            } else {
+                clickedBtn.classList.add('wrong');
+                if (!currentQuestionPenalized) {
+                    recordAttempt(false);
+                    currentQuestionPenalized = true;
+                    currentStreak = 0;
+                    document.getElementById('arenaStreakBadge').textContent = `Streak: 0 🔥`;
+                }
+
+                msg.innerHTML = `<span class="text-red">✗ Wrong Answer! (Counted as Mistake)</span> — Click Try Again to re-calculate or view shortcut.`;
+                document.getElementById('tryAgainBtn').classList.remove('hidden');
+                document.getElementById('addTimeBtn').classList.add('hidden');
+            }
+        }
+
+        function recordAttempt(isSuccess, timeSpentSec = 0) {
+            const todayKey = getDateStr(0);
+            ensureDayRecord(todayKey);
+
+            const day = appState.history[todayKey];
+            day.solved += 1;
+            if (isSuccess) {
+                day.correct += 1;
+                day.totalTime += timeSpentSec;
+            } else {
+                day.wrong += 1;
+                day.totalTime += allocatedSeconds;
+            }
+
+            const catKey = currentCategory;
+            if (!appState.catStats[catKey]) {
+                appState.catStats[catKey] = { solved: 0, correct: 0, wrong: 0 };
+            }
+            appState.catStats[catKey].solved += 1;
+            if (isSuccess) {
+                appState.catStats[catKey].correct += 1;
+            } else {
+                appState.catStats[catKey].wrong += 1;
+            }
+
+            saveState();
+        }
+
+        /*************************************************************
+         * 6. AI SHORTCUT COACH (OFFLINE ENGINE + OPTIONAL GEMINI API)
+         *************************************************************/
+        async function showShortcutTrick() {
+            const box = document.getElementById('aiTrickBox');
+            box.classList.remove('hidden');
+
+            document.querySelectorAll('.option-btn').forEach(b => {
+                if (b.dataset.val === currentQuestion.answer) {
+                    b.classList.add('correct');
+                }
+            });
+
+            const baseHtml = `
+                <div><strong>Correct Answer:</strong> ${currentQuestion.answer}</div>
+                <div style="margin-top:4px;">${currentQuestion.shortcutHint}</div>
+            `;
+
+            if (!appState.geminiApiKey) {
+                box.innerHTML = baseHtml;
+                return;
+            }
+
+            box.innerHTML = baseHtml + `<div style="margin-top:6px; color:var(--text-muted);">🤖 Fetching AI step-by-step paper breakdown...</div>`;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${appState.geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `Give a super concise, 2-sentence fastest pen-and-paper or mental math trick to calculate: ${currentQuestion.expression} = ${currentQuestion.answer}. No markdown headers, just direct calculation steps.`
+                            }]
+                        }]
+                    })
+                });
+                const data = await res.json();
+                const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (aiText) {
+                    box.innerHTML = baseHtml + `<div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-color);"><strong>🤖 Gemini AI Coach:</strong> ${aiText}</div>`;
+                }
+            } catch (err) {
+                box.innerHTML = baseHtml;
+            }
+        }
+
+        /*************************************************************
+         * 7. MODAL & KEYBOARD SHORTCUTS
+         *************************************************************/
+        function toggleModal(show) {
+            const modal = document.getElementById('settingsModal');
+            if (show) {
+                document.getElementById('geminiKeyInput').value = appState.geminiApiKey || '';
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function saveSettings() {
+            appState.geminiApiKey = document.getElementById('geminiKeyInput').value.trim();
+            saveState();
+            toggleModal(false);
+        }
+
+        function resetAllStats() {
+            if (confirm('Reset all calculation history and statistics?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        }
+
+        // Keyboard shortcuts: Space to Start Timer, 1/2/3/4 or A/B/C/D for options, Enter for Next, R for Retry
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('arenaView').classList.contains('hidden')) return;
+            if (!document.getElementById('settingsModal').classList.contains('hidden')) return;
+
+            // Spacebar starts the timer if waiting to start
+            if (e.code === 'Space' && !hasStartedTimer) {
+                e.preventDefault();
+                beginCalculationPhase();
+                return;
+            }
+
+            const key = e.key.toUpperCase();
+            const btns = document.querySelectorAll('.option-btn');
+            if (['1', 'A'].includes(key) && btns[0] && !btns[0].disabled) btns[0].click();
+            if (['2', 'B'].includes(key) && btns[1] && !btns[1].disabled) btns[1].click();
+            if (['3', 'C'].includes(key) && btns[2] && !btns[2].disabled) btns[2].click();
+            if (['4', 'D'].includes(key) && btns[3] && !btns[3].disabled) btns[3].click();
+
+            if (e.key === 'Enter' && !document.getElementById('feedbackPanel').classList.contains('hidden')) {
+                e.preventDefault();
+                nextQuestion();
+            }
+            if (key === 'R' && !document.getElementById('tryAgainBtn').classList.contains('hidden')) {
+                retrySameQuestion();
+            }
+        });
+
+        // Initialize App
+        loadState();
+        renderDashboard();
+    </script>
+</body>
+</html>

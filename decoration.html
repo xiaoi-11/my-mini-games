@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Phrase Dictation Tool</title>
+    <style>
+        :root {
+            --primary: #6366F1;
+            --primary-hover: #4F46E5;
+            --bg-color: #111827;
+            --container-bg: #1F2937;
+            --text-main: #F9FAFB;
+            --text-muted: #D1D5DB;
+            --input-bg: #374151;
+            --border-color: #4B5563;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 650px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        /* Estimate Banner Styling */
+        .estimate-banner {
+            background-color: rgba(16, 185, 129, 0.1); 
+            color: #6EE7B7;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            font-weight: 500;
+        }
+
+        .estimate-banner strong {
+            color: #F9FAFB;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            resize: vertical;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        textarea::placeholder {
+            color: #9CA3AF;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .controls-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--input-bg);
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .slider-label {
+            min-width: 190px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .slider-label strong {
+            color: var(--text-main);
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .top-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
+            color: white;
+        }
+
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #4B5563; color: #9CA3AF; cursor: not-allowed; transform: none; opacity: 0.7; }
+
+        .btn-play { background-color: var(--primary); padding: 12px; font-size: 1rem; }
+        .btn-play:hover { background-color: var(--primary-hover); }
+
+        .btn-stop { background-color: #EF4444; padding: 12px; font-size: 1rem; }
+        .btn-stop:hover { background-color: #DC2626; }
+
+        /* Timer Display */
+        #timerDisplay {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            color: var(--primary);
+            margin: 20px 0;
+            background: #111827;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* Big Toggle Button */
+        .bottom-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-massive {
+            flex: 1;
+            padding: 25px 15px;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .btn-pause { background-color: #F59E0B; color: #111827; font-weight: bold; }
+        .btn-pause:hover { background-color: #D97706; }
+
+        .btn-resume { background-color: #10B981; color: #111827; font-weight: bold; }
+        .btn-resume:hover { background-color: #059669; }
+
+        #status {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #6EE7B7; 
+            margin-top: 20px;
+            font-weight: 500;
+            padding: 15px;
+            background: var(--input-bg);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            min-height: 30px;
+        }
+        
+        .sub-status {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Smart Phrase Dictation Tool</h1>
+        
+        <div id="estimateDisplay" class="estimate-banner">
+            <strong>Time per page (100 words):</strong> ~<span id="estMins">0</span>m <span id="estSecs">00</span>s
+        </div>
+        
+        <textarea id="textInput" placeholder="Paste your AI-generated study materials here... Emojis are ignored, and it respects paragraphs cleanly!"></textarea>
+        
+        <div class="controls-group">
+            <div class="slider-control">
+                <div class="slider-label"><strong>Voice Speed:</strong> <span id="rateValue">0.8</span>x</div>
+                <input type="range" id="rateSlider" min="0.4" max="1.5" step="0.1" value="0.8">
+            </div>
+
+            <div class="slider-control" title="Max number of words to read if there are no commas or full stops.">
+                <div class="slider-label"><strong>Max Words per Phrase:</strong> <span id="phraseValue">6</span></div>
+                <input type="range" id="phraseSlider" min="2" max="12" step="1" value="6">
+            </div>
+
+            <div class="slider-control" title="Time to wait per letter inside the phrase.">
+                <div class="slider-label"><strong>Pause Time per Letter:</strong> <span id="gapValue">0.08</span> sec</div>
+                <input type="range" id="gapSlider" min="0.03" max="1.0" step="0.01" value="0.08">
+            </div>
+
+            <div class="top-buttons">
+                <button id="playBtn" class="btn-play">Start Dictation</button>
+                <button id="stopBtn" class="btn-stop">Stop</button>
+            </div>
+        </div>
+
+        <div id="timerDisplay">00:00</div>
+
+        <div class="bottom-buttons">
+            <button id="togglePauseBtn" class="btn-massive btn-pause" disabled>Pause</button>
+        </div>
+
+        <div id="status">Loading voices...</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('textInput');
+            const rateSlider = document.getElementById('rateSlider');
+            const gapSlider = document.getElementById('gapSlider');
+            const phraseSlider = document.getElementById('phraseSlider');
+            const rateValue = document.getElementById('rateValue');
+            const gapValue = document.getElementById('gapValue');
+            const phraseValue = document.getElementById('phraseValue');
+            const statusText = document.getElementById('status');
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            const estMins = document.getElementById('estMins');
+            const estSecs = document.getElementById('estSecs');
+            
+            const playBtn = document.getElementById('playBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const togglePauseBtn = document.getElementById('togglePauseBtn');
+
+            let synth = window.speechSynthesis;
+            let indianVoice = null;
+            
+            // Dictation state variables
+            let phraseChunks = [];
+            let currentIndex = 0;
+            let isPlaying = false;
+            let isPaused = false;
+            let timeoutId = null;
+
+            // Timer state variables
+            let clockInterval = null;
+            let startTime = 0;
+
+            if (!('speechSynthesis' in window)) {
+                statusText.innerHTML = `<span style="color: red;">Error: Your browser does not support text-to-speech.</span>`;
+                playBtn.disabled = true;
+                return;
+            }
+
+            // --- ESTIMATION MATH ALGORITHM ---
+            function updateEstimate() {
+                const rate = parseFloat(rateSlider.value);
+                const gap = parseFloat(gapSlider.value);
+                const phraseLen = parseInt(phraseSlider.value);
+
+                // 1. Time taken to physically speak 100 words (~40 sec at 1.0x rate)
+                const speakingTime = 40 / rate;
+
+                // 2. Pause time calculated for 600 average letters (100 words x ~6 letters per word)
+                const letterPauseTime = 600 * gap;
+
+                // 3. Base pause per phrase (0.5 sec added naturally between every chunk)
+                const phraseCount = 100 / phraseLen;
+                const phrasePauseTime = phraseCount * 0.5;
+
+                // Add them all together for the total estimated seconds
+                const totalSeconds = Math.round(speakingTime + letterPauseTime + phrasePauseTime);
+
+                // Convert to minutes and seconds format
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = totalSeconds % 60;
+
+                estMins.textContent = mins;
+                estSecs.textContent = String(secs).padStart(2, '0');
+            }
+
+            // Update UI & Estimate when sliders move
+            rateSlider.addEventListener('input', () => { rateValue.textContent = rateSlider.value; updateEstimate(); });
+            gapSlider.addEventListener('input', () => { gapValue.textContent = gapSlider.value; updateEstimate(); });
+            phraseSlider.addEventListener('input', () => { phraseValue.textContent = phraseSlider.value; updateEstimate(); });
+
+            // Run the calculation immediately when the page loads
+            updateEstimate();
+
+            function loadVoices() {
+                let voices = synth.getVoices();
+                indianVoice = voices.find(voice => 
+                    voice.lang === 'en-IN' || voice.lang === 'en_IN' || voice.name.toLowerCase().includes('india')
+                );
+                if (indianVoice) {
+                    statusText.innerHTML = `Ready! Using voice: ${indianVoice.name}`;
+                } else if (voices.length > 0) {
+                    indianVoice = voices[0];
+                    statusText.innerHTML = "Ready! (Indian accent not found, using default)";
+                }
+            }
+
+            loadVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = loadVoices;
+            }
+
+            function updateClock() {
+                const now = Date.now();
+                const totalSeconds = Math.floor((now - startTime) / 1000);
+                const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+                const seconds = String(totalSeconds % 60).padStart(2, '0');
+                timerDisplay.textContent = `${minutes}:${seconds}`;
+            }
+
+            function startClock() {
+                if (!clockInterval) {
+                    startTime = Date.now();
+                    clockInterval = setInterval(updateClock, 1000);
+                }
+            }
+
+            function stopClock() {
+                clearInterval(clockInterval);
+                clockInterval = null;
+                timerDisplay.textContent = "00:00";
+            }
+
+            function setButtonToPause() {
+                togglePauseBtn.textContent = "Pause";
+                togglePauseBtn.classList.remove('btn-resume');
+                togglePauseBtn.classList.add('btn-pause');
+            }
+
+            function setButtonToResume() {
+                togglePauseBtn.textContent = "Resume";
+                togglePauseBtn.classList.remove('btn-pause');
+                togglePauseBtn.classList.add('btn-resume');
+            }
+
+            function createPhraseChunks(text, maxWords) {
+                const rawTokens = text.match(/\S+|\n/g) || [];
+                let chunks = [];
+                let currentChunk = [];
+
+                for (let i = 0; i < rawTokens.length; i++) {
+                    let token = rawTokens[i];
+
+                    if (token === '\n') {
+                        if (currentChunk.length > 0) {
+                            chunks.push(currentChunk.join(' '));
+                            currentChunk = [];
+                        }
+                        continue; 
+                    }
+
+                    currentChunk.push(token);
+
+                    let hasPunctuation = /[.,;:?!]["']?$/.test(token);
+
+                    if (hasPunctuation || currentChunk.length >= maxWords) {
+                        chunks.push(currentChunk.join(' '));
+                        currentChunk = [];
+                    }
+                }
+                
+                if (currentChunk.length > 0) {
+                    chunks.push(currentChunk.join(' '));
+                }
+                return chunks;
+            }
+
+            function processNextPhrase() {
+                if (!isPlaying || isPaused) return;
+
+                if (currentIndex >= phraseChunks.length) {
+                    statusText.innerHTML = `Finished reading. <span class="sub-status">Session complete.</span>`;
+                    isPlaying = false;
+                    clearInterval(clockInterval);
+                    clockInterval = null;
+                    togglePauseBtn.disabled = true;
+                    setButtonToPause();
+                    return;
+                }
+
+                let phrase = phraseChunks[currentIndex];
+
+                let cleanLetterCount = phrase.replace(/[^a-zA-Z0-9]/g, '').length;
+                if (cleanLetterCount === 0) cleanLetterCount = 1;
+
+                statusText.innerHTML = `"${phrase}" <span class="sub-status">Contains ${cleanLetterCount} letters</span>`;
+                
+                const utterance = new SpeechSynthesisUtterance(phrase);
+                if (indianVoice) utterance.voice = indianVoice;
+                
+                utterance.rate = parseFloat(rateSlider.value);
+                utterance.pitch = 1.0; 
+
+                utterance.onend = () => {
+                    if (!isPlaying || isPaused) return;
+                    
+                    currentIndex++;
+                    
+                    let delay = (cleanLetterCount * parseFloat(gapSlider.value) * 1000) + 500;
+
+                    statusText.innerHTML = `"${phrase}" <span class="sub-status">Waiting for ${Math.round(delay/100)/10} seconds so you can write...</span>`;
+
+                    timeoutId = setTimeout(processNextPhrase, delay);
+                };
+
+                utterance.onerror = (e) => {
+                    if (e.error !== 'canceled' && e.error !== 'interrupted') {
+                        currentIndex++;
+                        timeoutId = setTimeout(processNextPhrase, 500);
+                    }
+                };
+
+                synth.speak(utterance);
+            }
+
+            playBtn.addEventListener('click', () => {
+                let text = textInput.value.trim();
+                
+                if (text === "") {
+                    statusText.innerHTML = `<span style="color: #F87171;">Please paste your study materials first.</span>`;
+                    return;
+                }
+
+                text = text.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '');
+
+                const maxWords = parseInt(phraseSlider.value);
+                phraseChunks = createPhraseChunks(text, maxWords);
+                
+                if (phraseChunks.length === 0 || (phraseChunks.length === 1 && phraseChunks[0] === "")) {
+                    statusText.innerHTML = `<span style="color: #F87171;">The text only contained emojis. Please add words.</span>`;
+                    return;
+                }
+
+                currentIndex = 0;
+                
+                clearTimeout(timeoutId);
+                synth.cancel();
+                stopClock();
+
+                isPlaying = true;
+                isPaused = false;
+                
+                togglePauseBtn.disabled = false;
+                setButtonToPause();
+                
+                startClock();
+                setTimeout(processNextPhrase, 100);
+            });
+
+            togglePauseBtn.addEventListener('click', () => {
+                if (!isPlaying) return;
+
+                if (isPaused) {
+                    isPaused = false;
+                    statusText.innerHTML = `Resuming... <span class="sub-status">Repeating last phrase.</span>`;
+                    setButtonToPause();
+                    processNextPhrase(); 
+                } else {
+                    isPaused = true;
+                    clearTimeout(timeoutId); 
+                    synth.cancel();          
+                    statusText.innerHTML = `<span style="color: #F59E0B;">Audio Paused</span> <span class="sub-status">Timer is still running...</span>`;
+                    setButtonToResume(); 
+                }
+            });
+
+            stopBtn.addEventListener('click', () => {
+                isPlaying = false;
+                isPaused = false;
+                clearTimeout(timeoutId);
+                synth.cancel();
+                currentIndex = 0;
+                stopClock();
+                
+                togglePauseBtn.disabled = true;
+                setButtonToPause();
+                
+                statusText.innerHTML = `Session Stopped.`;
+            });
+        });
+    </script>
+</body>
+</html>

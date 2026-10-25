@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe vs AI</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select, button {
+      padding: 10px 15px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background-color: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+    }
+
+    button:hover, select:hover {
+      background-color: #334155;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+    }
+
+    .cell {
+      background-color: #1e293b;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+    }
+
+    .cell:hover {
+      background-color: #334155;
+    }
+
+    .cell.x {
+      color: #38bdf8;
+    }
+
+    .cell.o {
+      color: #f43f5e;
+    }
+
+    .status {
+      margin-top: 20px;
+      font-size: 1.25rem;
+      font-weight: 600;
+      min-height: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Tic Tac Toe</h1>
+
+  <div class="controls">
+    <label for="orderSelect">Play as:</label>
+    <select id="orderSelect">
+      <option value="1">1st Player (X)</option>
+      <option value="2">2nd Player (O)</option>
+    </select>
+    <button id="restartBtn">New Game</button>
+  </div>
+
+  <div class="board" id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    const boardElement = document.getElementById('board');
+    const cells = document.querySelectorAll('.cell');
+    const statusElement = document.getElementById('status');
+    const orderSelect = document.getElementById('orderSelect');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let humanSymbol = 'X';
+    let aiSymbol = 'O';
+    let currentPlayer = 'X';
+    let isGameActive = true;
+
+    const WINNING_COMBOS = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6]
+    ];
+
+    function initGame() {
+      board = ['', '', '', '', '', '', '', '', ''];
+      isGameActive = true;
+      statusElement.textContent = '';
+      
+      const choice = orderSelect.value;
+      if (choice === '1') {
+        humanSymbol = 'X';
+        aiSymbol = 'O';
+        currentPlayer = 'X';
+        statusElement.textContent = "Your turn (X)";
+      } else {
+        humanSymbol = 'O';
+        aiSymbol = 'X';
+        currentPlayer = 'X';
+        statusElement.textContent = "AI is thinking...";
+      }
+
+      cells.forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('x', 'o');
+      });
+
+      if (currentPlayer === aiSymbol) {
+        setTimeout(makeAIMove, 400);
+      }
+    }
+
+    function handleCellClick(e) {
+      const index = e.target.getAttribute('data-index');
+
+      if (board[index] !== '' || !isGameActive || currentPlayer !== humanSymbol) {
+        return;
+      }
+
+      executeMove(index, humanSymbol);
+
+      if (isGameActive && currentPlayer === aiSymbol) {
+        statusElement.textContent = "AI is thinking...";
+        setTimeout(makeAIMove, 400);
+      }
+    }
+
+    function executeMove(index, symbol) {
+      board[index] = symbol;
+      const cell = cells[index];
+      cell.textContent = symbol;
+      cell.classList.add(symbol.toLowerCase());
+
+      if (checkWin(board, symbol)) {
+        statusElement.textContent = symbol === humanSymbol ? "You win!" : "AI wins!";
+        isGameActive = false;
+        return;
+      }
+
+      if (board.every(cell => cell !== '')) {
+        statusElement.textContent = "It's a draw!";
+        isGameActive = false;
+        return;
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      if (isGameActive) {
+        statusElement.textContent = currentPlayer === humanSymbol ? `Your turn (${humanSymbol})` : "AI is thinking...";
+      }
+    }
+
+    function makeAIMove() {
+      if (!isGameActive) return;
+      const bestMoveIndex = getBestMove();
+      executeMove(bestMoveIndex, aiSymbol);
+    }
+
+    function getBestMove() {
+      let bestScore = -Infinity;
+      let move;
+
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === '') {
+          board[i] = aiSymbol;
+          let score = minimax(board, 0, false);
+          board[i] = '';
+          if (score > bestScore) {
+            bestScore = score;
+            move = i;
+          }
+        }
+      }
+      return move;
+    }
+
+    function minimax(tempBoard, depth, isMaximizing) {
+      if (checkWin(tempBoard, aiSymbol)) return 10 - depth;
+      if (checkWin(tempBoard, humanSymbol)) return depth - 10;
+      if (tempBoard.every(cell => cell !== '')) return 0;
+
+      if (isMaximizing) {
+        let maxEval = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (tempBoard[i] === '') {
+            tempBoard[i] = aiSymbol;
+            let evaluation = minimax(tempBoard, depth + 1, false);
+            tempBoard[i] = '';
+            maxEval = Math.max(maxEval, evaluation);
+          }
+        }
+        return maxEval;
+      } else {
+        let minEval = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (tempBoard[i] === '') {
+            tempBoard[i] = humanSymbol;
+            let evaluation = minimax(tempBoard, depth + 1, true);
+            tempBoard[i] = '';
+            minEval = Math.min(minEval, evaluation);
+          }
+        }
+        return minEval;
+      }
+    }
+
+    function checkWin(currentBoard, symbol) {
+      return WINNING_COMBOS.some(combination => {
+        return combination.every(index => currentBoard[index] === symbol);
+      });
+    }
+
+    cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    restartBtn.addEventListener('click', initGame);
+    orderSelect.addEventListener('change', initGame);
+
+    initGame();
+  </script>
+</body>
+</html>

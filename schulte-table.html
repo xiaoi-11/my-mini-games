@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Number Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden; 
+        }
+
+        /* NEW: Top bar for Glow Toggles */
+        .top-controls {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 12px;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 50;
+        }
+
+        .toggle-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            background-color: #2a2a2a;
+            color: #888;
+            border: 2px solid #444;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background-color: #2E7D32;
+            color: #fff;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+        }
+        
+        .top-area {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 10px;
+        }
+
+        .bottom-spacer {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #performance-chart {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            max-width: 95vw;
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10; 
+        }
+
+        .stats {
+            display: flex;
+            gap: 40px;
+            font-size: 24px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .board-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* NEW: Wrapper for the Subtle Distant Glow */
+        #subtle-glow-wrapper {
+            padding: 20px; /* Creates distance from the board */
+            border-radius: 16px;
+            transition: box-shadow 0.1s ease-out;
+        }
+
+        #game-board {
+            display: grid;
+            gap: 2px;
+            background-color: #fff;
+            border: 4px solid #fff; 
+            max-width: 90vw;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-radius: 4px;
+            transition: border-color 0.1s ease-out, box-shadow 0.1s ease-out;
+        }
+
+        #countdown-overlay {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px; bottom: 20px; 
+            background-color: #121212; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            font-weight: bold;
+            color: #32CD32;
+            z-index: 20;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.8);
+            border-radius: 4px;
+        }
+
+        #countdown-overlay.hidden {
+            display: none;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 70px;
+            height: 70px;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            position: relative; 
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        .cell.blackout {
+            background-color: #000000 !important;
+            color: #000000 !important; 
+        }
+
+        .cell.game-over-fade {
+            opacity: 0.2;
+            cursor: default;
+        }
+
+        #message {
+            margin-top: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            height: 28px; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .controls-area {
+            background-color: #1e1e1e;
+            padding: 20px 30px;
+            border-radius: 16px; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6); 
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .controls-area h2 {
+            margin: 0 0 15px 0;
+            font-size: 20px;
+            color: #e0e0e0;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+            border-radius: 8px;
+            border: 2px solid #444;
+            background-color: #2a2a2a;
+            color: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #4CAF50;
+        }
+
+        button.game-btn {
+            padding: 10px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        #retry-btn {
+            background: linear-gradient(135deg, #2196F3, #1565C0);
+        }
+
+        button.game-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.3);
+        }
+
+        button.game-btn:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Glow Settings Toolbar at the very top -->
+    <div class="top-controls">
+        <button id="toggle-subtle" class="toggle-btn active" onclick="toggleSubtle()">Ambient Pulse: ON</button>
+        <button id="toggle-intense" class="toggle-btn" onclick="toggleIntense()">Intense Glow: OFF</button>
+    </div>
+
+    <div class="top-area">
+        <canvas id="performance-chart" width="400" height="170"></canvas>
+    </div>
+
+    <div class="game-area">
+        <div class="stats">
+            <div>Find: <span id="current-target">1</span></div>
+            <div>Time: <span id="time-left">0</span>s</div>
+        </div>
+        
+        <div class="board-container">
+            <!-- Wrapper controls the outer subtle glow, away from board -->
+            <div id="subtle-glow-wrapper">
+                <div id="game-board"></div>
+            </div>
+            <div id="countdown-overlay" class="hidden">3</div>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+
+    <div class="bottom-spacer">
+        <div class="controls-area">
+            <h2>Focus Sequence Game</h2>
+            <div class="input-group">
+                <label for="max-number">Target:</label>
+                <input type="number" id="max-number" value="25" min="4" max="100">
+                <button id="start-btn" class="game-btn" onclick="startGame()">New Game</button>
+                <button id="retry-btn" class="game-btn" onclick="retryGame()" disabled>Retry</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let maxNum = 25;
+        let currentTarget = 1;
+        let isPlaying = false; 
+        let numberColors = {}; 
+        
+        // Visual Timer Features State
+        let isSubtleOn = true;
+        let isIntenseOn = false;
+
+        let maxTimeMs = 0;
+        let gameStartTime = 0;
+        let animationFrameId = null;
+        let preGameTimerId = null;
+        
+        let clickData = []; 
+        let lastClickTime = 0;
+        const canvas = document.getElementById('performance-chart');
+        const ctx = canvas.getContext('2d');
+
+        const colorStyles = [
+            { bg: '#8A2BE2', text: '#00FF00' }, { bg: '#FFD700', text: '#800080' }, 
+            { bg: '#0000CD', text: '#FFFFFF' }, { bg: '#00FFFF', text: '#FF0000' }, 
+            { bg: '#FF1493', text: '#FFFFFF' }, { bg: '#FF0000', text: '#FFFF00' }, 
+            { bg: '#32CD32', text: '#000000' }, { bg: '#FF4500', text: '#FFFFFF' }, 
+            { bg: '#FFA500', text: '#000080' }, { bg: '#9370DB', text: '#000000' }, 
+            { bg: '#4169E1', text: '#FFFACD' }, { bg: '#DC143C', text: '#00FFFF' }  
+        ];
+
+        drawChart();
+
+        // Toggle Functions
+        function toggleSubtle() {
+            isSubtleOn = !isSubtleOn;
+            const btn = document.getElementById('toggle-subtle');
+            btn.classList.toggle('active', isSubtleOn);
+            btn.textContent = `Ambient Pulse: ${isSubtleOn ? 'ON' : 'OFF'}`;
+            if (!isSubtleOn && !isPlaying) document.getElementById('subtle-glow-wrapper').style.boxShadow = 'none';
+        }
+
+        function toggleIntense() {
+            isIntenseOn = !isIntenseOn;
+            const btn = document.getElementById('toggle-intense');
+            btn.classList.toggle('active', isIntenseOn);
+            btn.textContent = `Intense Glow: ${isIntenseOn ? 'ON' : 'OFF'}`;
+            if (!isIntenseOn && !isPlaying) {
+                document.getElementById('game-board').style.borderColor = '#fff';
+                document.getElementById('game-board').style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+            }
+        }
+
+        function getRandomItem(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function resetGameState() {
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(preGameTimerId);
+            currentTarget = 1;
+            isPlaying = false; 
+            clickData = []; 
+            drawChart();
+            
+            document.getElementById('current-target').textContent = currentTarget;
+            document.getElementById('time-left').textContent = maxNum;
+            document.getElementById('message').textContent = "";
+            document.getElementById('start-btn').disabled = true; 
+            document.getElementById('retry-btn').disabled = true; 
+            
+            // Reset Board Styling entirely
+            document.getElementById('game-board').style.borderColor = '#fff';
+            document.getElementById('game-board').style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+            document.getElementById('subtle-glow-wrapper').style.boxShadow = 'none';
+        }
+
+        function startGame() {
+            maxNum = parseInt(document.getElementById('max-number').value) || 25;
+            resetGameState();
+            
+            numberColors = {};
+            for (let i = 1; i <= maxNum; i++) {
+                numberColors[i] = getRandomItem(colorStyles);
+            }
+            
+            createBoard();
+            startCountdown();
+        }
+
+        function retryGame() {
+            maxNum = Object.keys(numberColors).length;
+            document.getElementById('max-number').value = maxNum; 
+            resetGameState();
+            createBoard();
+            startCountdown();
+        }
+
+        function startCountdown() {
+            const overlay = document.getElementById('countdown-overlay');
+            let count = 3;
+            
+            overlay.textContent = count;
+            overlay.classList.remove('hidden');
+            
+            preGameTimerId = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    overlay.textContent = count;
+                } else if (count === 0) {
+                    overlay.textContent = "GO!";
+                } else {
+                    clearInterval(preGameTimerId);
+                    overlay.classList.add('hidden');
+                    
+                    document.getElementById('start-btn').disabled = false; 
+                    document.getElementById('retry-btn').disabled = false; 
+                    
+                    isPlaying = true; 
+                    maxTimeMs = maxNum * 1000;
+                    gameStartTime = performance.now();
+                    lastClickTime = gameStartTime; 
+                    
+                    animationFrameId = requestAnimationFrame(updateGameLoop); 
+                }
+            }, 1000);
+        }
+
+        function updateGameLoop() {
+            if (!isPlaying) return;
+
+            const now = performance.now();
+            const elapsed = now - gameStartTime;
+            const remaining = Math.max(0, maxTimeMs - elapsed);
+            
+            document.getElementById('time-left').textContent = Math.ceil(remaining / 1000);
+
+            const progress = remaining / maxTimeMs;
+            const hue = progress * 120; // 120 = Green, 0 = Red
+            
+            // Flash intensifies sharply exactly on the second
+            const msSinceSecond = elapsed % 1000;
+            const pulse = Math.max(0, 1 - (msSinceSecond / 200)); 
+            
+            const board = document.getElementById('game-board');
+            const subtleWrapper = document.getElementById('subtle-glow-wrapper');
+
+            // 1. Hardcore Mode Logic (Intense Inner/Outer Glow)
+            if (isIntenseOn) {
+                board.style.borderColor = `hsl(${hue}, 100%, 50%)`;
+                const spread = 5 + (pulse * 20);
+                const blur = 15 + (pulse * 25);
+                const opacity = 0.5 + (pulse * 0.5);
+                
+                board.style.boxShadow = `
+                    0 0 ${blur}px ${spread}px hsla(${hue}, 100%, 50%, ${opacity}), 
+                    inset 0 0 ${10 + (pulse * 15)}px hsla(${hue}, 100%, 50%, ${opacity * 0.8})
+                `;
+            } else {
+                board.style.borderColor = '#fff';
+                board.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+            }
+
+            // 2. Ambient Mode Logic (Soft Distant Pulsing)
+            if (isSubtleOn) {
+                const ambientOpacity = 0.15 + (pulse * 0.25); // Very soft
+                subtleWrapper.style.boxShadow = `0 0 40px 10px hsla(${hue}, 100%, 50%, ${ambientOpacity})`;
+            } else {
+                subtleWrapper.style.boxShadow = 'none';
+            }
+
+            if (remaining <= 0) {
+                endGame(false);
+            } else {
+                animationFrameId = requestAnimationFrame(updateGameLoop);
+            }
+        }
+
+        function createBoard() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+            const cols = Math.ceil(Math.sqrt(maxNum));
+            board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            let numbers = Array.from({length: maxNum}, (_, i) => i + 1);
+            numbers = shuffleArray(numbers);
+
+            numbers.forEach(num => {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.textContent = num;
+                
+                const style = numberColors[num];
+                cell.style.backgroundColor = style.bg;
+                cell.style.color = style.text;
+                
+                cell.addEventListener('click', () => handleCellClick(cell, num));
+                board.appendChild(cell);
+            });
+        }
+
+        function handleCellClick(cell, num) {
+            if (!isPlaying) return;
+
+            if (num === currentTarget) {
+                const now = performance.now();
+                const timeTaken = now - lastClickTime;
+                lastClickTime = now;
+                clickData.push({ num: num, time: timeTaken });
+                drawChart();
+
+                cell.classList.add('blackout');
+                setTimeout(() => {
+                    cell.classList.remove('blackout');
+                }, 350);
+
+                currentTarget++;
+                
+                if (currentTarget > maxNum) {
+                    endGame(true);
+                } else {
+                    document.getElementById('current-target').textContent = currentTarget;
+                }
+            }
+        }
+
+        function endGame(isWin) {
+            cancelAnimationFrame(animationFrameId);
+            isPlaying = false; 
+            
+            const board = document.getElementById('game-board');
+            const subtleWrapper = document.getElementById('subtle-glow-wrapper');
+            const msgElement = document.getElementById('message');
+            
+            if (isWin) {
+                msgElement.textContent = "🎉 You Won! Amazing Focus!";
+                msgElement.style.color = "#32CD32";
+                
+                if (isIntenseOn) {
+                    board.style.borderColor = "#32CD32";
+                    board.style.boxShadow = "0 0 20px 5px rgba(50,205,50,0.6)";
+                }
+                if (isSubtleOn) {
+                    subtleWrapper.style.boxShadow = "0 0 40px 10px rgba(50,205,50,0.3)";
+                }
+            } else {
+                msgElement.textContent = `⏳ Time's Up! You reached ${currentTarget - 1}.`;
+                msgElement.style.color = "#FF4500";
+                
+                if (isIntenseOn) {
+                    board.style.borderColor = "#FF4500";
+                    board.style.boxShadow = "0 0 20px 5px rgba(255,69,0,0.6)";
+                }
+                if (isSubtleOn) {
+                    subtleWrapper.style.boxShadow = "0 0 40px 10px rgba(255,69,0,0.3)";
+                }
+            }
+            
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => cell.classList.add('game-over-fade'));
+        }
+
+        function drawChart() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (clickData.length === 0) {
+                ctx.fillStyle = '#666';
+                ctx.font = 'bold 14px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.fillText('Reaction Speed Graph', canvas.width/2, canvas.height/2);
+                ctx.font = '11px Segoe UI';
+                ctx.fillText('Find numbers to track speed', canvas.width/2, canvas.height/2 + 20);
+                return;
+            }
+
+            const padding = 35; 
+            const w = canvas.width - padding * 2;
+            const h = canvas.height - padding * 2;
+            
+            let maxTime = Math.max(...clickData.map(d => d.time), 2000); 
+
+            function getY(time) {
+                return padding + (time / maxTime) * h;
+            }
+
+            const y1s = getY(1000);
+            if (y1s < canvas.height - padding) {
+                ctx.beginPath();
+                ctx.moveTo(padding, y1s);
+                ctx.lineTo(canvas.width - padding, y1s);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            const stepX = w / (maxNum - 1 || 1); 
+
+            function getColor(time) {
+                if (time <= 1000) return '#32CD32'; 
+                if (time <= 2500) return '#FFD700'; 
+                return '#FF4500';                   
+            }
+
+            // Draw Lines
+            for (let i = 1; i < clickData.length; i++) {
+                const prev = clickData[i-1];
+                const curr = clickData[i];
+                
+                const x1 = padding + (prev.num - 1) * stepX;
+                const y1 = getY(prev.time);
+                const x2 = padding + (curr.num - 1) * stepX;
+                const y2 = getY(curr.time);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = getColor(curr.time);
+                ctx.stroke();
+            }
+            
+            // Draw Dots and Text
+            for (let i = 0; i < clickData.length; i++) {
+                const curr = clickData[i];
+                const x = padding + (curr.num - 1) * stepX;
+                const y = getY(curr.time);
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = getColor(curr.time);
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#1e1e1e';
+                ctx.stroke();
+                
+                const isEven = curr.num % 2 === 0;
+                const yOffset = isEven ? 18 : -12; 
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+                ctx.shadowBlur = 4;
+                
+                ctx.fillText(curr.num, x, y + yOffset);
+                ctx.shadowBlur = 0;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Genius Memory Dojo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        /* Top Mode Switcher */
+        .top-nav {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            z-index: 20;
+        }
+
+        .mode-btn {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            background-color: #262626;
+            color: #999;
+            border: 1px solid #444;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #6200EA, #3700B3);
+            color: #fff;
+            border-color: #9d46ff;
+            box-shadow: 0 0 12px rgba(157, 70, 255, 0.4);
+        }
+
+        /* Top Graph Area */
+        .chart-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-top: 6px;
+        }
+
+        #memory-chart {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            max-width: 94vw;
+        }
+
+        /* Center Game Stage */
+        .game-stage {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 15px;
+            position: relative;
+        }
+
+        .hud-bar {
+            display: flex;
+            gap: 24px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #e0e0e0;
+        }
+
+        .hud-bar span {
+            color: #00E676;
+        }
+
+        /* Shared Grid Styles */
+        .grid-board {
+            display: grid;
+            gap: 6px;
+            background-color: #1e1e1e;
+            padding: 10px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        }
+
+        .grid-cell {
+            width: 62px;
+            height: 62px;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.15s;
+            border: 1px solid #3a3a3a;
+        }
+
+        /* Chimp Flash Specific */
+        .grid-cell.chimp-visible {
+            background-color: #2979FF;
+            border-color: #82B1FF;
+        }
+
+        .grid-cell.chimp-masked {
+            background-color: #ffffff;
+            color: transparent;
+            border-color: #ffffff;
+        }
+
+        .grid-cell.chimp-correct {
+            background-color: #00C853;
+            color: #fff;
+        }
+
+        .grid-cell.chimp-wrong {
+            background-color: #FF1744;
+            color: #fff;
+        }
+
+        /* Dual N-Back Specific */
+        .nback-grid .grid-cell {
+            width: 82px;
+            height: 82px;
+            font-size: 30px;
+        }
+
+        .grid-cell.nback-active {
+            background: radial-gradient(circle, #00E5FF, #0091EA);
+            box-shadow: 0 0 18px #00E5FF;
+            border-color: #fff;
+            transform: scale(0.96);
+        }
+
+        .nback-MatchBtns {
+            display: flex;
+            gap: 15px;
+            margin-top: 14px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .match-btn {
+            flex: 1;
+            padding: 12px 10px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 10px;
+            border: 2px solid #444;
+            background-color: #252525;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .match-btn.pressed-good {
+            background-color: #1B5E20;
+            border-color: #00E676;
+        }
+
+        .match-btn.pressed-bad {
+            background-color: #B71C1C;
+            border-color: #FF5252;
+        }
+
+        /* Loci Memory Palace Specific */
+        .loci-card {
+            width: 100%;
+            max-width: 360px;
+            background-color: #1e1e1e;
+            border: 2px solid #444;
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        }
+
+        .locus-title {
+            font-size: 14px;
+            color: #BB86FC;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .locus-room {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .locus-word {
+            font-size: 32px;
+            font-weight: 800;
+            color: #00E676;
+            margin: 12px 0;
+            padding: 12px;
+            background: #141414;
+            border-radius: 10px;
+            border: 1px dashed #444;
+        }
+
+        .locus-tip {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .loci-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .loci-opt-btn {
+            padding: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background-color: #2c2c2c;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .loci-opt-btn:active {
+            background-color: #6200EA;
+        }
+
+        #status-msg {
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            height: 22px;
+            text-align: center;
+        }
+
+        /* Bottom Controls */
+        .controls-panel {
+            width: 92%;
+            max-width: 380px;
+            background-color: #1e1e1e;
+            padding: 14px 20px;
+            border-radius: 16px;
+            border: 1px solid #333;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .control-row label {
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .num-input {
+            width: 65px;
+            padding: 7px;
+            font-size: 15px;
+            text-align: center;
+            background-color: #2a2a2a;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 8px;
+        }
+
+        .primary-btn {
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #00C853, #1B5E20);
+            color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            flex: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Mode Selector -->
+    <div class="top-nav">
+        <button class="mode-btn active" onclick="switchMode('chimp')">⚡ Ayumu Flash</button>
+        <button class="mode-btn" onclick="switchMode('nback')">🧠 Dual N-Back</button>
+        <button class="mode-btn" onclick="switchMode('loci')">🏛️ Loci Palace</button>
+    </div>
+
+    <!-- Top Performance Graph -->
+    <div class="chart-section">
+        <canvas id="memory-chart" width="370" height="115"></canvas>
+    </div>
+
+    <!-- Center Interactive Area -->
+    <div class="game-stage">
+        <div class="hud-bar">
+            <div id="hud-left">Level: <span>5</span></div>
+            <div id="hud-right">Score: <span>0</span></div>
+        </div>
+
+        <!-- MODE 1: AYUMU CHIMP FLASH -->
+        <div id="stage-chimp">
+            <div id="chimp-board" class="grid-board" style="grid-template-columns: repeat(5, 1fr);"></div>
+        </div>
+
+        <!-- MODE 2: DUAL N-BACK -->
+        <div id="stage-nback" class="hidden">
+            <div id="nback-board" class="grid-board nback-grid" style="grid-template-columns: repeat(3, 1fr);"></div>
+            <div class="nback-MatchBtns">
+                <button id="btn-pos-match" class="match-btn" onclick="checkNBackMatch('pos')">📍 Position Match</button>
+                <button id="btn-aud-match" class="match-btn" onclick="checkNBackMatch('aud')">🔊 Sound Match</button>
+            </div>
+        </div>
+
+        <!-- MODE 3: LOCI MEMORY PALACE -->
+        <div id="stage-loci" class="hidden">
+            <div class="loci-card">
+                <div class="locus-title" id="loci-step-label">LOCUS 1 OF 8</div>
+                <div class="locus-room" id="loci-room-name">🚪 Front Doorstep</div>
+                <div class="locus-word" id="loci-target-word">GIANT PINEAPPLE</div>
+                <div class="locus-tip" id="loci-instruction">
+                    Picture this item interacting wildly with the location! Make it夸张 (exaggerated) & vivid.
+                </div>
+                <button id="loci-next-btn" class="primary-btn" style="width:100%" onclick="nextLociStep()">Next Room ➔</button>
+                <div id="loci-quiz-box" class="loci-options hidden"></div>
+            </div>
+        </div>
+
+        <div id="status-msg">Tap "Start Training" below to begin!</div>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="controls-panel">
+        <div class="control-row">
+            <label id="setting-label" for="level-input">Numbers to Flash (3–15):</label>
+            <input type="number" id="level-input" class="num-input" value="5" min="1" max="20">
+            <button id="start-btn" class="primary-btn" onclick="startCurrentMode()">Start Training</button>
+        </div>
+    </div>
+
+    <script>
+        /* ==================== GLOBAL STATE & GRAPH ==================== */
+        let currentMode = 'chimp';
+        let historyData = {
+            chimp: [],
+            nback: [],
+            loci: []
+        };
+
+        const canvas = document.getElementById('memory-chart');
+        const ctx = canvas.getContext('2d');
+
+        function recordScore(val, label) {
+            historyData[currentMode].push({ val, label });
+            if (historyData[currentMode].length > 12) {
+                historyData[currentMode].shift();
+            }
+            drawGraph();
+        }
+
+        function drawGraph() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const data = historyData[currentMode];
+
+            const titles = {
+                chimp: 'Ayumu Spatial Capacity (Items Recalled)',
+                nback: 'Dual N-Back Accuracy (%)',
+                loci: 'Memory Palace Recall (%)'
+            };
+
+            ctx.fillStyle = '#888';
+            ctx.font = 'bold 11px Segoe UI';
+            ctx.textAlign = 'left';
+            ctx.fillText(titles[currentMode], 12, 16);
+
+            if (data.length === 0) {
+                ctx.fillStyle = '#555';
+                ctx.font = '12px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.fillText('Complete a round to plot your brain growth curve', canvas.width / 2, canvas.height / 2 + 8);
+                return;
+            }
+
+            const padL = 25, padR = 25, padT = 32, padB = 20;
+            const w = canvas.width - padL - padR;
+            const h = canvas.height - padT - padB;
+
+            const maxVal = Math.max(...data.map(d => d.val), currentMode === 'chimp' ? 10 : 100);
+            const minVal = 0;
+
+            const stepX = data.length > 1 ? w / (data.length - 1) : w / 2;
+
+            // Connect lines
+            for (let i = 1; i < data.length; i++) {
+                const x1 = padL + (i - 1) * stepX;
+                const y1 = padT + h - ((data[i - 1].val - minVal) / (maxVal - minVal)) * h;
+                const x2 = padL + i * stepX;
+                const y2 = padT + h - ((data[i].val - minVal) / (maxVal - minVal)) * h;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = '#00E676';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+            }
+
+            // Draw nodes & values
+            data.forEach((d, idx) => {
+                const x = data.length === 1 ? canvas.width / 2 : padL + idx * stepX;
+                const y = padT + h - ((d.val - minVal) / (maxVal - minVal)) * h;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#BB86FC';
+                ctx.fill();
+
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px Segoe UI';
+                ctx.textAlign = 'center';
+                ctx.fillText(d.label, x, y - 8);
+            });
+        }
+
+        function switchMode(mode) {
+            stopNBack();
+            currentMode = mode;
+
+            document.querySelectorAll('.mode-btn').forEach((btn, idx) => {
+                const modes = ['chimp', 'nback', 'loci'];
+                btn.classList.toggle('active', modes[idx] === mode);
+            });
+
+            document.getElementById('stage-chimp').classList.toggle('hidden', mode !== 'chimp');
+            document.getElementById('stage-nback').classList.toggle('hidden', mode !== 'nback');
+            document.getElementById('stage-loci').classList.toggle('hidden', mode !== 'loci');
+
+            const input = document.getElementById('level-input');
+            const label = document.getElementById('setting-label');
+
+            if (mode === 'chimp') {
+                label.textContent = 'Numbers to Flash (3–15):';
+                input.value = chimpCount;
+                input.min = 3; input.max = 15;
+                updateHUD(`Numbers: <span>${chimpCount}</span>`, `Strikes: <span>0/3</span>`);
+                initChimpBoard( false );
+            } else if (mode === 'nback') {
+                label.textContent = 'N-Back Level (1–6):';
+                input.value = nBackLevel;
+                input.min = 1; input.max = 6;
+                updateHUD(`N-Back: <span>${nBackLevel}</span>`, `Step: <span>0/20</span>`);
+                initNBackGrid();
+            } else if (mode === 'loci') {
+                label.textContent = 'Palace Items (5–15):';
+                input.value = lociCount;
+                input.min = 5; input.max = 15;
+                updateHUD(`Loci Rooms: <span>${lociCount}</span>`, `Phase: <span>Ready</span>`);
+            }
+
+            setStatus('Tap "Start Training" below to begin!', '#aaa');
+            drawGraph();
+        }
+
+        function updateHUD(leftHTML, rightHTML) {
+            document.getElementById('hud-left').innerHTML = leftHTML;
+            document.getElementById('hud-right').innerHTML = rightHTML;
+        }
+
+        function setStatus(text, color = '#fff') {
+            const el = document.getElementById('status-msg');
+            el.textContent = text;
+            el.style.color = color;
+        }
+
+        function startCurrentMode() {
+            const val = parseInt(document.getElementById('level-input').value) || 5;
+            if (currentMode === 'chimp') {
+                chimpCount = Math.min(15, Math.max(3, val));
+                startChimpRound();
+            } else if (currentMode === 'nback') {
+                nBackLevel = Math.min(6, Math.max(1, val));
+                startNBackSession();
+            } else if (currentMode === 'loci') {
+                lociCount = Math.min(15, Math.max(4, val));
+                startLociPalace();
+            }
+        }
+
+        /* ==================== MODE 1: AYUMU CHIMP FLASH ==================== */
+        let chimpCount = 5;
+        let chimpNextExpected = 1;
+        let chimpStrikes = 0;
+        let chimpPlaying = false;
+
+        function initChimpBoard(populate = false) {
+            const board = document.getElementById('chimp-board');
+            board.innerHTML = '';
+            const totalCells = 25; // 5x5 Grid
+
+            let positions = Array.from({ length: totalCells }, (_, i) => i);
+            positions.sort(() => Math.random() - 0.5);
+
+            const activeMap = {};
+            if (populate) {
+                for (let i = 1; i <= chimpCount; i++) {
+                    activeMap[positions[i - 1]] = i;
+                }
+            }
+
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                if (activeMap[i]) {
+                    cell.textContent = activeMap[i];
+                    cell.dataset.num = activeMap[i];
+                    cell.classList.add('chimp-visible');
+                    cell.onclick = () => handleChimpTap(cell);
+                }
+                board.appendChild(cell);
+            }
+        }
+
+        function startChimpRound() {
+            chimpNextExpected = 1;
+            chimpPlaying = true;
+            updateHUD(`Numbers: <span>${chimpCount}</span>`, `Strikes: <span>${chimpStrikes}/3</span>`);
+            setStatus('Memorize whole snapshot! Tap 1 to mask.', '#00E5FF');
+            initChimpBoard(true);
+        }
+
+        function handleChimpTap(cell) {
+            if (!chimpPlaying) return;
+            const num = parseInt(cell.dataset.num);
+            if (!num) return;
+
+            if (num === 1 && chimpNextExpected === 1) {
+                // Mask all remaining numbers immediately like Ayumu test
+                document.querySelectorAll('#chimp-board .grid-cell').forEach(c => {
+                    if (c.dataset.num && parseInt(c.dataset.num) > 1) {
+                        c.classList.remove('chimp-visible');
+                        c.classList.add('chimp-masked');
+                    }
+                });
+            }
+
+            if (num === chimpNextExpected) {
+                cell.classList.remove('chimp-visible', 'chimp-masked');
+                cell.classList.add('chimp-correct');
+                cell.dataset.num = '';
+                chimpNextExpected++;
+
+                if (chimpNextExpected > chimpCount) {
+                    chimpPlaying = false;
+                    recordScore(chimpCount, `${chimpCount}✓`);
+                    chimpCount = Math.min(15, chimpCount + 1);
+                    document.getElementById('level-input').value = chimpCount;
+                    setStatus('🎉 Flawless Eidetic Recall! Level Up!', '#00E676');
+                }
+            } else {
+                // Mistake
+                chimpPlaying = false;
+                chimpStrikes++;
+                cell.classList.remove('chimp-masked');
+                cell.classList.add('chimp-wrong');
+
+                // Reveal missed numbers
+                document.querySelectorAll('#chimp-board .grid-cell').forEach(c => {
+                    if (c.dataset.num) c.classList.remove('chimp-masked');
+                });
+
+                recordScore(chimpNextExpected - 1, `${chimpNextExpected - 1}✗`);
+
+                if (chimpStrikes >= 3) {
+                    setStatus(`Game Over! Reached ${chimpCount} numbers.`, '#FF5252');
+                    chimpStrikes = 0;
+                    chimpCount = Math.max(4, chimpCount - 1);
+                    document.getElementById('level-input').value = chimpCount;
+                } else {
+                    setStatus(`Missed #${chimpNextExpected}! Try again.`, '#FFAB00');
+                }
+                updateHUD(`Numbers: <span>${chimpCount}</span>`, `Strikes: <span>${chimpStrikes}/3</span>`);
+            }
+        }
+
+        /* ==================== MODE 2: DUAL N-BACK ==================== */
+        let nBackLevel = 2;
+        let nBackTimer = null;
+        let nBackHistory = [];
+        let nBackStep = 0;
+        let nBackMaxSteps = 20;
+        let nBackStats = { hits: 0, misses: 0, falseAlarms: 0 };
+        let userPressedPos = false;
+        let userPressedAud = false;
+        const nBackLetters = ['C', 'H', 'K', 'L', 'Q', 'R', 'S', 'T'];
+
+        function initNBackGrid() {
+            const board = document.getElementById('nback-board');
+            board.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.id = `nb-cell-${i}`;
+                board.appendChild(cell);
+            }
+        }
+
+        function speakLetter(letter) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(letter.toLowerCase());
+                utter.rate = 1.1;
+                window.speechSynthesis.speak(utter);
+            }
+        }
+
+        function startNBackSession() {
+            stopNBack();
+            initNBackGrid();
+            nBackHistory = [];
+            nBackStep = 0;
+            nBackStats = { hits: 0, misses: 0, falseAlarms: 0 };
+            setStatus(`Remember Position & Letter ${nBackLevel} step(s) back!`, '#00E5FF');
+            runNBackTick();
+            nBackTimer = setInterval(runNBackTick, 2600);
+        }
+
+        function stopNBack() {
+            if (nBackTimer) clearInterval(nBackTimer);
+            nBackTimer = null;
+        }
+
+        function runNBackTick() {
+            // Evaluate previous step misses if applicable
+            if (nBackStep > nBackLevel) {
+                const prevCurr = nBackHistory[nBackStep - 1];
+                const prevTarget = nBackHistory[nBackStep - 1 - nBackLevel];
+                if (prevCurr.pos === prevTarget.pos && !userPressedPos) nBackStats.misses++;
+                if (prevCurr.letter === prevTarget.letter && !userPressedAud) nBackStats.misses++;
+            }
+
+            if (nBackStep >= nBackMaxSteps) {
+                finishNBackSession();
+                return;
+            }
+
+            userPressedPos = false;
+            userPressedAud = false;
+            document.getElementById('btn-pos-match').className = 'match-btn';
+            document.getElementById('btn-aud-match').className = 'match-btn';
+
+            // 35% chance to force a match for effective training
+            let pos = Math.floor(Math.random() * 9);
+            let letter = nBackLetters[Math.floor(Math.random() * nBackLetters.length)];
+
+            if (nBackStep >= nBackLevel) {
+                const target = nBackHistory[nBackStep - nBackLevel];
+                if (Math.random() < 0.35) pos = target.pos;
+                if (Math.random() < 0.35) letter = target.letter;
+            }
+
+            nBackHistory.push({ pos, letter });
+            nBackStep++;
+
+            updateHUD(`N-Back: <span>N=${nBackLevel}</span>`, `Step: <span>${nBackStep}/${nBackMaxSteps}</span>`);
+
+            // Flash cell & show letter briefly
+            document.querySelectorAll('#nback-board .grid-cell').forEach(c => {
+                c.classList.remove('nback-active');
+                c.textContent = '';
+            });
+
+            const activeCell = document.getElementById(`nb-cell-${pos}`);
+            if (activeCell) {
+                activeCell.classList.add('nback-active');
+                activeCell.textContent = letter;
+                setTimeout(() => {
+                    activeCell.classList.remove('nback-active');
+                    activeCell.textContent = '';
+                }, 900);
+            }
+
+            speakLetter(letter);
+        }
+
+        function checkNBackMatch(type) {
+            if (!nBackTimer || nBackStep <= nBackLevel) return;
+
+            const curr = nBackHistory[nBackStep - 1];
+            const target = nBackHistory[nBackStep - 1 - nBackLevel];
+
+            if (type === 'pos' && !userPressedPos) {
+                userPressedPos = true;
+                const btn = document.getElementById('btn-pos-match');
+                if (curr.pos === target.pos) {
+                    nBackStats.hits++;
+                    btn.classList.add('pressed-good');
+                } else {
+                    nBackStats.falseAlarms++;
+                    btn.classList.add('pressed-bad');
+                }
+            } else if (type === 'aud' && !userPressedAud) {
+                userPressedAud = true;
+                const btn = document.getElementById('btn-aud-match');
+                if (curr.letter === target.letter) {
+                    nBackStats.hits++;
+                    btn.classList.add('pressed-good');
+                } else {
+                    nBackStats.falseAlarms++;
+                    btn.classList.add('pressed-bad');
+                }
+            }
+        }
+
+        function finishNBackSession() {
+            stopNBack();
+            const totalEvents = nBackStats.hits + nBackStats.misses + nBackStats.falseAlarms;
+            const accuracy = totalEvents === 0 ? 100 : Math.round((nBackStats.hits / totalEvents) * 100);
+            recordScore(accuracy, `${accuracy}%`);
+
+            if (accuracy >= 80) {
+                nBackLevel = Math.min(6, nBackLevel + 1);
+                document.getElementById('level-input').value = nBackLevel;
+                setStatus(`🔥 ${accuracy}% Accuracy! Upgraded to N=${nBackLevel}!`, '#00E676');
+            } else {
+                setStatus(`Session Complete: ${accuracy}% Accuracy (Hits: ${nBackStats.hits})`, '#FFD700');
+            }
+        }
+
+        /* ==================== MODE 3: LOCI MEMORY PALACE ==================== */
+        const palaceRooms = [
+            "🚪 1. Front Doorstep", "🪞 2. Hallway Mirror", "🧥 3. Coat Rack",
+            "🛋️ 4. Living Room Sofa", "📺 5. Television Screen", "🪴 6. Corner Plant",
+            "🍽️ 7. Dining Table", "🚰 8. Kitchen Sink", "🔥 9. Kitchen Stovetop",
+            "🧊 10. Refrigerator", "🛏️ 11. Master Bed", "📚 12. Wooden Bookshelf",
+            "🛁 13. Bathtub", "🌇 14. Sunny Balcony", "🚗 15. Garage Car Hood"
+        ];
+
+        const vividObjects = [
+            "🦩 Neon Flamingo", "🍕 Melting Pizza", "🎸 Flaming Guitar", "🐙 Purple Octopus",
+            "👑 Golden Crown", "🦖 Mini T-Rex", "🌵 Singing Cactus", "💎 Giant Diamond",
+            "🚀 Silver Rocket", "⛄ Disco Snowman", "🍍 Electric Pineapple", "🧲 Super Magnet",
+            "🎻 Floating Violin", "🐉 Baby Dragon", "⏳ Glowing Hourglass", "🎩 Magic Top-Hat",
+            "🦄 Crystal Unicorn", "⚓ Rusty Anchor", "🎈 Lead Balloon", "🧀 Swiss Cheese Wheel"
+        ];
+
+        let lociCount = 8;
+        let lociSequence = [];
+        let lociIndex = 0;
+        let lociPhase = 'encode'; // 'encode' or 'recall'
+        let lociCorrect = 0;
+
+        function startLociPalace() {
+            const shuffled = [...vividObjects].sort(() => Math.random() - 0.5);
+            lociSequence = shuffled.slice(0, lociCount);
+            lociIndex = 0;
+            lociCorrect = 0;
+            lociPhase = 'encode';
+
+            document.getElementById('loci-next-btn').classList.remove('hidden');
+            document.getElementById('loci-quiz-box').classList.add('hidden');
+            document.getElementById('loci-target-word').classList.remove('hidden');
+            setStatus('Encoding Phase: Build vivid mental animations!', '#BB86FC');
+            renderLociCard();
+        }
+
+        function renderLociCard() {
+            document.getElementById('loci-step-label').textContent = `LOCUS ${lociIndex + 1} OF ${lociCount}`;
+            document.getElementById('loci-room-name').textContent = palaceRooms[lociIndex];
+
+            if (lociPhase === 'encode') {
+                updateHUD(`Room: <span>${lociIndex + 1}/${lociCount}</span>`, `Phase: <span>Memorize</span>`);
+                document.getElementById('loci-target-word').textContent = lociSequence[lociIndex];
+                document.getElementById('loci-instruction').textContent =
+                    `Visualize ${lociSequence[lociIndex]} crashing into or transforming the ${palaceRooms[lociIndex].slice(5)}!`;
+                document.getElementById('loci-next-btn').textContent =
+                    lociIndex === lociCount - 1 ? 'Start Recall Walk 🧠' : 'Next Room ➔';
+            } else {
+                updateHUD(`Room: <span>${lociIndex + 1}/${lociCount}</span>`, `Score: <span>${lociCorrect}/${lociIndex}</span>`);
+                document.getElementById('loci-target-word').classList.add('hidden');
+                document.getElementById('loci-next-btn').classList.add('hidden');
+                document.getElementById('loci-instruction').textContent =
+                    `Walk into this locus in your mind. What object did you place here?`;
+
+                const quizBox = document.getElementById('loci-quiz-box');
+                quizBox.classList.remove('hidden');
+                quizBox.innerHTML = '';
+
+                const correctItem = lociSequence[lociIndex];
+                const distractors = vividObjects
+                    .filter(item => item !== correctItem)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 3);
+
+                const options = [correctItem, ...distractors].sort(() => Math.random() - 0.5);
+
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'loci-opt-btn';
+                    btn.textContent = opt;
+                    btn.onclick = () => handleLociAnswer(opt === correctItem);
+                    quizBox.appendChild(btn);
+                });
+            }
+        }
+
+        function nextLociStep() {
+            if (lociIndex < lociCount - 1) {
+                lociIndex++;
+                renderLociCard();
+            } else {
+                lociPhase = 'recall';
+                lociIndex = 0;
+                setStatus('Recall Walk: Retrieve each image from your palace!', '#00E676');
+                renderLociCard();
+            }
+        }
+
+        function handleLociAnswer(isCorrect) {
+            if (isCorrect) {
+                lociCorrect++;
+                setStatus('✅ Correct! Your spatial anchor held strong!', '#00E676');
+            } else {
+                setStatus(`❌ It was ${lociSequence[lociIndex]}! Make the image weirder next time.`, '#FF5252');
+            }
+
+            if (lociIndex < lociCount - 1) {
+                lociIndex++;
+                renderLociCard();
+            } else {
+                const pct = Math.round((lociCorrect / lociCount) * 100);
+                recordScore(pct, `${lociCorrect}/${lociCount}`);
+                document.getElementById('loci-quiz-box').classList.add('hidden');
+                document.getElementById('loci-target-word').classList.remove('hidden');
+                document.getElementById('loci-target-word').textContent = `${pct}% RECALLED`;
+                updateHUD(`Palace Complete`, `Score: <span>${lociCorrect}/${lociCount}</span>`);
+
+                if (pct === 100) {
+                    lociCount = Math.min(15, lociCount + 1);
+                    document.getElementById('level-input').value = lociCount;
+                }
+            }
+        }
+
+        // Initialize Default View
+        initChimpBoard(false);
+        drawGraph();
+    </script>
+</body>
+</html>

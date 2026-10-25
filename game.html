@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Realistic Highway Racer - Multiplier Run</title>
+    <style>
+        :root {
+            --ui-primary: #ffaa00;
+            --ui-bg: #222;
+            --ui-text: #fff;
+            --ui-multiplier: #ff33ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #555;
+            color: var(--ui-text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; 
+            touch-action: none; 
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Modals & Overlays */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .panel {
+            background: var(--ui-bg);
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 2px solid #444;
+            max-width: 80%;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #555;
+            background: #111;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            outline: none;
+            text-align: center;
+            width: 80%;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--ui-primary);
+        }
+
+        button {
+            background: var(--ui-primary);
+            color: #000;
+            border: none;
+            padding: 12px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: #ffcc00;
+            transform: scale(1.05);
+        }
+
+        /* Game UI */
+        #game-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #2d5a27; 
+        }
+
+        #top-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(17, 17, 17, 0.9);
+            z-index: 10;
+            border-bottom: 3px solid var(--ui-primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        #player-name-display {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ccc;
+        }
+
+        #dashboard {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #speed-gauge {
+            font-size: 18px;
+            color: #00ff00;
+            font-weight: bold;
+            background: #111;
+            padding: 5px 15px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            letter-spacing: 1px;
+            transition: color 0.2s ease;
+        }
+
+        #score-container {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            text-align: right;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #score-display {
+            color: var(--ui-primary);
+        }
+
+        #multiplier-display {
+            font-size: 24px;
+            color: var(--ui-multiplier);
+            text-shadow: 0 0 10px var(--ui-multiplier);
+            font-weight: 900;
+            font-style: italic;
+        }
+
+        .score-red {
+            color: #ff3333 !important;
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="overlay">
+        <div class="panel">
+            <h2>Driver Profile</h2>
+            <input type="text" id="username-input" placeholder="Enter Name..." maxlength="12">
+            <br>
+            <button onclick="saveUsername()">Start Engine</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden">
+        <div id="top-bar">
+            <span id="player-name-display">Player</span>
+            <div id="dashboard">
+                <span id="speed-gauge">0 KM/H</span>
+            </div>
+            <div id="score-container">
+                <span id="multiplier-display">x1</span>
+                <div>SCORE: <span id="score-display">0</span></div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        // --- 1. USERNAME LOGIC ---
+        const loginScreen = document.getElementById('login-screen');
+        const gameContainer = document.getElementById('game-container');
+        const usernameInput = document.getElementById('username-input');
+        const nameDisplay = document.getElementById('player-name-display');
+
+        let currentUser = localStorage.getItem('highway_racer_username');
+
+        if (currentUser) {
+            loginScreen.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+            nameDisplay.textContent = currentUser;
+            setTimeout(initGame, 100);
+        }
+
+        function saveUsername() {
+            const name = usernameInput.value.trim();
+            if (name.length > 0) {
+                localStorage.setItem('highway_racer_username', name);
+                currentUser = name;
+                nameDisplay.textContent = name;
+                
+                loginScreen.classList.add('hidden');
+                gameContainer.classList.remove('hidden');
+                setTimeout(initGame, 100);
+            }
+        }
+
+        // --- 2. GAME ENGINE & VARIABLES ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score-display');
+        const speedGauge = document.getElementById('speed-gauge');
+        const multiplierDisplay = document.getElementById('multiplier-display');
+
+        let numLanes = 5; 
+        let roadWidth = 0;
+        let roadLeft = 0;
+        let lanes = [];
+        let laneWidth = 0;
+        let carWidth = 35; 
+        let carHeight = 65;
+
+        // Player Variables
+        let currentLane = 2; 
+        let player = { x: 0, y: 0, width: 0, height: 0, color: '#2b58d9' }; 
+        let playerTargetY = 0; // For smooth forward/backward movement
+
+        let obstacles = [];
+        let scenery = []; 
+        let score = 0;
+        let multiplier = 1;
+        let framesWithoutCrash = 0;
+        
+        // Speed & Physics
+        let minSpeed = 5;    // Base starting speed and post-crash speed
+        let maxSpeed = 26;   // Absolute top speed the game will auto-accelerate to
+        let gameSpeed = 5;
+        let autoAccelerationRate = 0.008; // How fast the game speeds up automatically
+
+        let isMovingForward = false; // Right side screen / Up Arrow
+        let isMovingBackward = false; // Left side screen / Down Arrow
+        let crashEffectTimer = 0;
+
+        let frameCount = 0;
+        let animationId;
+        let gridOffset = 0; 
+
+        const carColors = ['#cc1111', '#11cc22', '#cccccc', '#d99c2b', '#333333', '#8833ff'];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+            canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+            
+            let maxRoadWidth = 700; 
+            roadWidth = Math.min(canvas.width * 0.9, maxRoadWidth);
+            roadLeft = (canvas.width - roadWidth) / 2; 
+            
+            laneWidth = roadWidth / numLanes;
+            
+            lanes = [];
+            for (let i = 0; i < numLanes; i++) {
+                lanes.push(roadLeft + (laneWidth * (i + 0.5)));
+            }
+
+            carWidth = Math.min(40, laneWidth * 0.6);
+            carHeight = carWidth * 1.8;
+
+            player.width = carWidth;
+            player.height = carHeight;
+            
+            // Re-anchor Y target if resizing
+            if (playerTargetY === 0) {
+                playerTargetY = canvas.height - carHeight - 60;
+                player.y = playerTargetY;
+            }
+
+            obstacles.forEach(obs => {
+                obs.width = carWidth;
+                obs.height = carHeight;
+            });
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- 3. CONTROLS (FORWARD/BACKWARD & LANE SWITCH) ---
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
+                if (currentLane > 0) currentLane--;
+            } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                if (currentLane < numLanes - 1) currentLane++;
+            } else if (e.key === 'ArrowUp' || e.key === 'w') {
+                isMovingForward = true;
+            } else if (e.key === 'ArrowDown' || e.key === 's') {
+                isMovingBackward = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w') isMovingForward = false;
+            if (e.key === 'ArrowDown' || e.key === 's') isMovingBackward = false;
+        });
+
+        // Touch Controls
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        window.addEventListener('touchstart', (e) => {
+            let touchX = e.changedTouches[0].screenX;
+            touchStartX = touchX;
+
+            // Split screen mechanics: Right side = Forward, Left side = Backward
+            if (touchX > canvas.width / 2) {
+                isMovingForward = true;
+            } else {
+                isMovingBackward = true;
+            }
+        });
+
+        window.addEventListener('touchend', (e) => {
+            isMovingForward = false;
+            isMovingBackward = false;
+
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        window.addEventListener('touchcancel', () => {
+            isMovingForward = false;
+            isMovingBackward = false;
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 30; 
+            const swipeDistance = touchEndX - touchStartX;
+            
+            if (swipeDistance < -swipeThreshold) {
+                if (currentLane > 0) currentLane--; 
+            } else if (swipeDistance > swipeThreshold) {
+                if (currentLane < numLanes - 1) currentLane++; 
+            }
+        }
+
+        // --- 4. DRAWING GRAPHICS ---
+        function drawCar(x, y, w, h, color) {
+            ctx.save();
+            ctx.translate(x, y); 
+
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(-w/2 + 3, 3, w, h); 
+
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, 0, w, h); 
+
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(-w/2 + 3, h * 0.2, w - 6, h * 0.6);
+
+            ctx.fillStyle = '#111';
+            let tireW = 4;
+            let tireH = h * 0.2;
+            ctx.fillRect(-w/2 - tireW/2, h * 0.1, tireW, tireH);       
+            ctx.fillRect(w/2 - tireW/2, h * 0.1, tireW, tireH); 
+            ctx.fillRect(-w/2 - tireW/2, h * 0.7, tireW, tireH);       
+            ctx.fillRect(w/2 - tireW/2, h * 0.7, tireW, tireH); 
+
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(-w/2 + 3, h * 0.2, w - 6, h * 0.18); 
+            ctx.fillRect(-w/2 + 4, h * 0.65, w - 8, h * 0.12); 
+
+            ctx.fillStyle = '#fff9d6';
+            ctx.fillRect(-w/2 + 2, 2, 6, 3);
+            ctx.fillRect(w/2 - 8, 2, 6, 3);
+
+            ctx.fillStyle = '#cc0000';
+            ctx.fillRect(-w/2 + 2, h - 3, 8, 3);
+            ctx.fillRect(w/2 - 10, h - 3, 8, 3);
+
+            ctx.restore();
+        }
+
+        function drawEnvironment() {
+            ctx.fillStyle = '#417b37'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#3a3a3c'; 
+            ctx.fillRect(roadLeft, 0, roadWidth, canvas.height);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(roadLeft - 3, 0, 3, canvas.height); 
+            ctx.fillRect(roadLeft + roadWidth, 0, 3, canvas.height); 
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([20, 30]);
+            ctx.lineDashOffset = -gridOffset;
+
+            ctx.beginPath();
+            for (let i = 1; i < numLanes; i++) {
+                let lineX = roadLeft + (laneWidth * i);
+                ctx.moveTo(lineX, 0); 
+                ctx.lineTo(lineX, canvas.height);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]); 
+            
+            gridOffset += gameSpeed;
+            if (gridOffset > 50) gridOffset = 0;
+
+            for (let i = 0; i < scenery.length; i++) {
+                let item = scenery[i];
+                item.y += gameSpeed; 
+
+                ctx.save();
+                ctx.translate(item.x, item.y);
+                ctx.scale(item.scale, item.scale);
+
+                if (item.type === 'tree') {
+                    ctx.fillStyle = '#5c4033'; 
+                    ctx.fillRect(-8, 0, 16, 25);
+                    ctx.fillStyle = '#228b22'; 
+                    ctx.beginPath();
+                    ctx.arc(0, -8, 20, 0, Math.PI * 2);
+                    ctx.arc(-12, -15, 15, 0, Math.PI * 2);
+                    ctx.arc(12, -15, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#2e8b57';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            scenery = scenery.filter(item => item.y < canvas.height + 100);
+        }
+
+        // --- 5. MAIN GAME LOOP ---
+        function spawnScenery() {
+            let side = Math.random() > 0.5 ? 0 : 1;
+            let spawnX = side === 0 ? Math.random() * (roadLeft - 30) : roadLeft + roadWidth + 30 + Math.random() * (canvas.width - roadLeft - roadWidth - 30);
+
+            scenery.push({
+                x: spawnX, y: -100,
+                scale: 0.5 + Math.random() * 0.7, 
+                type: Math.random() > 0.3 ? 'tree' : 'bush'
+            });
+        }
+
+        function spawnObstacle(forceLane = null) {
+            let targetLane = forceLane;
+            if (targetLane === null) {
+                targetLane = (Math.random() > 0.35) ? currentLane : Math.floor(Math.random() * numLanes);
+            }
+            
+            let randomColor = carColors[Math.floor(Math.random() * carColors.length)];
+            
+            obstacles.push({
+                laneIndex: targetLane,
+                x: lanes[targetLane],
+                y: -carHeight - 60, 
+                width: carWidth,
+                height: carHeight,
+                color: randomColor,
+                passed: false,
+                crashed: false 
+            });
+        }
+
+        function update() {
+            // 1. AUTO-ACCELERATION
+            if (gameSpeed < maxSpeed) {
+                gameSpeed += autoAccelerationRate;
+            }
+
+            // Sync Speedometer (Multiplier to look realistic)
+            let displaySpeed = Math.floor(gameSpeed * 10); 
+            speedGauge.textContent = `${displaySpeed} KM/H`;
+
+            // Color coding speedometer based on danger (speed)
+            if (gameSpeed > 18) speedGauge.style.color = "#ff3333";
+            else if (gameSpeed > 12) speedGauge.style.color = "#ffaa00";
+            else speedGauge.style.color = "#00ff00";
+
+            // 2. Y-AXIS SPATIAL CONTROL
+            let moveSpeedY = 7;
+            if (isMovingForward) playerTargetY -= moveSpeedY;
+            if (isMovingBackward) playerTargetY += moveSpeedY;
+
+            // Constrain player to stay on screen
+            let topLimit = 60;
+            let bottomLimit = canvas.height - player.height - 30;
+            if (playerTargetY < topLimit) playerTargetY = topLimit;
+            if (playerTargetY > bottomLimit) playerTargetY = bottomLimit;
+
+            drawEnvironment();
+
+            // Smoothly move car to X lane and Y position
+            player.x += (lanes[currentLane] - player.x) * 0.35; 
+            player.y += (playerTargetY - player.y) * 0.25;
+
+            // Handle Crash Animation (Flashing Red)
+            let renderColor = player.color;
+            if (crashEffectTimer > 0) {
+                crashEffectTimer--;
+                if (crashEffectTimer % 8 < 4) {
+                    renderColor = '#ff0000'; // Flash red
+                }
+            }
+            drawCar(player.x, player.y, player.width, player.height, renderColor);
+
+            // 3. SCORE & MULTIPLIER LOGIC
+            framesWithoutCrash++;
+            // Increase multiplier every 5 seconds (roughly 300 frames at 60fps)
+            multiplier = 1 + Math.floor(framesWithoutCrash / 300);
+            multiplierDisplay.textContent = `x${multiplier}`;
+
+            // Passive score increase based on speed and multiplier
+            score += (gameSpeed * 0.01) * multiplier;
+
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.y += gameSpeed;
+                obs.x = lanes[obs.laneIndex]; 
+
+                drawCar(obs.x, obs.y, obs.width, obs.height, obs.color);
+
+                // COLLISION DETECTION
+                if (!obs.crashed && 
+                    player.x - player.width/2 < obs.x + obs.width/2 &&
+                    player.x + player.width/2 > obs.x - obs.width/2 &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y) {
+                    
+                    // Crash Penalty
+                    obs.crashed = true;
+                    gameSpeed = minSpeed; // Drop speed back down
+                    framesWithoutCrash = 0; // Reset Multiplier
+                    multiplier = 1;
+                    multiplierDisplay.textContent = `x1`;
+                    crashEffectTimer = 30; 
+                    
+                    // Deduct Points
+                    score = Math.max(0, score - 100); 
+                    scoreDisplay.classList.add('score-red');
+                    setTimeout(() => scoreDisplay.classList.remove('score-red'), 300);
+                }
+
+                // Overtaking points 
+                if (obs.y > player.y + player.height && !obs.passed) {
+                    obs.passed = true;
+                    if (!obs.crashed) {
+                        // Bonus points for passing cleanly, scaled by multiplier
+                        score += 10 * multiplier; 
+                    }
+                }
+            }
+
+            // Update Score UI (Round to integer)
+            scoreDisplay.textContent = Math.floor(score);
+
+            obstacles = obstacles.filter(obs => obs.y < canvas.height + 50);
+
+            frameCount++;
+            
+            // DYNAMIC SPAWNER (Spawns faster as auto-speed increases)
+            let spawnDelay = Math.max(12, 45 - Math.floor(gameSpeed * 1.5));
+            if (frameCount % spawnDelay === 0) {
+                let targetLane = (Math.random() > 0.35) ? currentLane : Math.floor(Math.random() * numLanes);
+                
+                let isLaneClear = true;
+                for (let j = 0; j < obstacles.length; j++) {
+                    if (obstacles[j].laneIndex === targetLane && obstacles[j].y < carHeight + 20) {
+                        isLaneClear = false;
+                        break;
+                    }
+                }
+                
+                if (isLaneClear) {
+                    spawnObstacle(targetLane);
+                }
+            }
+
+            if (frameCount % 6 === 0) {
+                spawnScenery();
+            }
+
+            animationId = requestAnimationFrame(update);
+        }
+
+        function initGame() {
+            resizeCanvas(); 
+            currentLane = 2;
+            
+            playerTargetY = canvas.height - carHeight - 60;
+            player.x = lanes[currentLane]; 
+            player.y = playerTargetY;
+
+            score = 0;
+            framesWithoutCrash = 0;
+            multiplier = 1;
+            gameSpeed = minSpeed;
+
+            scoreDisplay.textContent = score;
+            multiplierDisplay.textContent = `x1`;
+
+            obstacles = [];
+            scenery = [];
+            
+            for(let i = 0; i < 20; i++) {
+                spawnScenery();
+                scenery[scenery.length-1].y = Math.random() * canvas.height;
+            }
+
+            update();
+        }
+    </script>
+</body>
+</html>

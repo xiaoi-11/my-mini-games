@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mancala Master - God Mode Engine</title>
+    <style>
+        body {
+            background-color: #1a1a1a; color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; min-height: 100vh; margin: 0; overflow: hidden;
+        }
+
+        #start-modal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 2000;
+        }
+
+        .modal-box {
+            background: #2a2a2a; padding: 40px; border-radius: 20px;
+            border: 2px solid #d4a373; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .modal-box h1 { color: #e6c29a; margin-top: 0; }
+        
+        .modal-btn {
+            background: #d4a373; color: #1a1a1a; border: none; padding: 15px 30px;
+            margin: 10px; border-radius: 10px; font-weight: bold; cursor: pointer;
+            font-size: 1.1rem; transition: background 0.2s, transform 0.1s;
+        }
+        .modal-btn:hover { background: #e6c29a; transform: scale(1.05); }
+
+        #status {
+            font-size: 1.5rem; margin-bottom: 10px; font-weight: bold;
+            color: #d4a373; height: 30px;
+        }
+
+        .board {
+            background: linear-gradient(145deg, #e6c29a, #c29b6f);
+            border-radius: 40px; padding: 30px;
+            box-shadow: 10px 10px 30px rgba(0,0,0,0.5), inset 2px 2px 5px rgba(255,255,255,0.3);
+            display: flex; flex-direction: column; align-items: center;
+            gap: 20px; width: 320px;
+        }
+
+        .store-wrapper { position: relative; width: 100%; }
+        
+        .store {
+            height: 80px; width: 100%; background: #a37a52; border-radius: 40px;
+            box-shadow: inset 5px 5px 15px rgba(0,0,0,0.6), inset -2px -2px 5px rgba(255,255,255,0.1);
+            position: relative; box-sizing: border-box;
+        }
+
+        .pits-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 15px 40px; width: 100%;
+        }
+
+        .pit-wrapper { display: flex; align-items: center; position: relative; justify-content: center; }
+        .pit-wrapper.right { flex-direction: row-reverse; }
+
+        .pit {
+            width: 60px; height: 60px; background: #a37a52; border-radius: 50%;
+            box-shadow: inset 5px 5px 15px rgba(0,0,0,0.6), inset -2px -2px 5px rgba(255,255,255,0.1);
+            cursor: pointer; position: relative; box-sizing: border-box;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .pit:hover { transform: scale(1.05); background: #b5895c; }
+        .pit.disabled { cursor: not-allowed; pointer-events: none; }
+        .pit.highlight, .store.highlight { background: #cba37e; }
+
+        .count {
+            color: #5c3a21; font-weight: 900; font-size: 1.1rem;
+            margin: 0 10px; width: 20px; text-align: center;
+        }
+
+        /* UPDATED: Dynamic expanding pill marker */
+        .move-marker {
+            position: absolute; top: -5px; right: -5px;
+            background: #ff3333; color: #fff; border-radius: 12px;
+            min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box;
+            font-size: 0.9rem; font-weight: 900; white-space: nowrap;
+            display: none; align-items: center; justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.7); z-index: 20; border: 2px solid #1a1a1a;
+        }
+        .right .move-marker { right: auto; left: -5px; } 
+
+        .stone {
+            width: 12px; height: 12px; border-radius: 50%;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.5), inset -2px -2px 4px rgba(0,0,0,0.3);
+            position: absolute; transition: opacity 0.4s ease-in-out; 
+        }
+
+        .fade-out-stone { opacity: 0 !important; }
+
+        .fade-in-stone {
+            opacity: 0;
+            animation: fadeInStone 0.4s ease-in-out forwards;
+        }
+
+        @keyframes fadeInStone { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+        .hand {
+            position: fixed; z-index: 1000; width: 0; height: 0;
+            transition: top 0.225s ease-in-out, left 0.225s ease-in-out; pointer-events: none;
+        }
+
+        .stone.c1 { background: radial-gradient(circle at 30% 30%, #fff, #ccc); } 
+        .stone.c2 { background: radial-gradient(circle at 30% 30%, #555, #111); } 
+        .stone.c3 { background: radial-gradient(circle at 30% 30%, #a0522d, #5c2408); } 
+        .stone.c4 { background: radial-gradient(circle at 30% 30%, #87ceeb, #4682b4); } 
+        .stone.c5 { background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b); } 
+
+        #ai-explanation {
+            margin-top: 20px; background: #2a2a2a; border: 2px solid #5c3a21;
+            border-radius: 15px; padding: 15px; width: 350px; text-align: center;
+            font-size: 1rem; color: #e6c29a; min-height: 48px; display: flex;
+            align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .history-controls {
+            display: flex; justify-content: space-between; width: 380px; margin-top: 15px;
+        }
+
+        .nav-btn {
+            background: #5c3a21; color: #fff; border: none; border-radius: 10px;
+            padding: 10px 20px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) { background: #7a4f30; }
+        .nav-btn:disabled { background: #3a2515; color: #777; cursor: not-allowed; box-shadow: none; }
+
+    </style>
+</head>
+<body>
+
+    <div id="start-modal">
+        <div class="modal-box">
+            <h1>Mancala Engine</h1>
+            <p style="margin-bottom: 20px; font-size: 1.2rem; color: #ccc;">Who should make the first move?</p>
+            <button class="modal-btn" onclick="startGame(true)">Opponent plays first</button>
+            <button class="modal-btn" onclick="startGame(false)">You play first</button>
+        </div>
+    </div>
+
+    <div id="status">Waiting to start...</div>
+
+    <div class="board" id="game-board">
+        <div class="store-wrapper">
+            <div class="count" id="count-13" style="position:absolute; left: -20px; top: 30px;">0</div>
+            <div class="store" id="pit-13"></div>
+        </div>
+
+        <div class="pits-grid" id="pits-grid"></div>
+
+        <div class="store-wrapper">
+            <div class="count" id="count-6" style="position:absolute; right: -20px; top: 30px;">0</div>
+            <div class="store" id="pit-6"></div>
+        </div>
+    </div>
+
+    <div id="ai-explanation">Waiting for the game to start...</div>
+
+    <div class="history-controls">
+        <button id="btn-prev" class="nav-btn" onclick="viewPrevious()" disabled>⬅️ Previous</button>
+        <button id="btn-next" class="nav-btn" onclick="viewNext()" disabled>Next ➡️</button>
+    </div>
+
+    <script>
+        let board = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0];
+        let currentPlayer = 1; 
+        let isAnimating = false; 
+        
+        let gameHistory = [];
+        let viewIndex = 0; 
+        let aiSequenceCount = 0; 
+        
+        const gridLayout = [[0, 12], [1, 11], [2, 10], [3, 9], [4, 8], [5, 7]];
+        const stoneColors = ['c1', 'c2', 'c3', 'c4', 'c5'];
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        function initBoardUI() {
+            const grid = document.getElementById('pits-grid');
+            grid.innerHTML = '';
+            gridLayout.forEach(row => {
+                grid.innerHTML += `
+                    <div class="pit-wrapper left">
+                        <div class="count" id="count-${row[0]}">4</div>
+                        <div style="position:relative;">
+                            <div class="pit" id="pit-${row[0]}" onclick="handleUserClick(${row[0]})"></div>
+                            <div class="move-marker" id="marker-${row[0]}"></div>
+                        </div>
+                    </div>
+                    <div class="pit-wrapper right">
+                        <div class="count" id="count-${row[1]}">4</div>
+                        <div style="position:relative;">
+                            <div class="pit" id="pit-${row[1]}"></div>
+                            <div class="move-marker" id="marker-${row[1]}"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            render();
+        }
+
+        function clearMarkers() {
+            aiSequenceCount = 0;
+            for(let i=0; i<14; i++) {
+                let m = document.getElementById(`marker-${i}`);
+                if(m) m.innerText = '';
+            }
+        }
+
+        function startGame(opponentFirst) {
+            document.getElementById('start-modal').style.display = 'none';
+            gameHistory = []; 
+            clearMarkers();
+            board = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0];
+            
+            if (opponentFirst) {
+                currentPlayer = 1;
+                document.getElementById('ai-explanation').innerText = "The game has started. It is the Opponent's move.";
+                saveState("The game has started. It is the Opponent's move.", null);
+            } else {
+                currentPlayer = 2;
+                document.getElementById('ai-explanation').innerText = "The game has started. It is your move.";
+                saveState("The game has started. It is your move.", null);
+                setTimeout(triggerAI, 500);
+            }
+            render();
+        }
+
+        function saveState(explanationText, moveIndex) {
+            gameHistory.push({
+                boardState: [...board], playerState: currentPlayer,
+                explanationText: explanationText, playedMove: moveIndex 
+            });
+            viewIndex = gameHistory.length - 1; 
+            updateNavButtons();
+        }
+
+        async function viewPrevious() {
+            if (viewIndex > 0 && !isAnimating) {
+                isAnimating = true; updateNavButtons();
+                let targetState = gameHistory[viewIndex - 1];
+                let targetBoard = targetState.boardState;
+
+                for (let i = 0; i < 14; i++) {
+                    const pit = document.getElementById(`pit-${i}`);
+                    let currentCount = board[i]; let targetCount = targetBoard[i];
+
+                    if (currentCount > targetCount) {
+                        let stonesToRemove = currentCount - targetCount;
+                        let stoneElements = pit.getElementsByClassName('stone');
+                        for(let j = 0; j < stonesToRemove; j++) {
+                            let idx = currentCount - 1 - j;
+                            if(stoneElements[idx]) stoneElements[idx].classList.add('fade-out-stone');
+                        }
+                    } else if (currentCount < targetCount) {
+                        let stonesToAdd = targetCount - currentCount;
+                        let type = (i === 6 || i === 13) ? 'store' : 'pit';
+                        let newStonesHTML = getScatterStones(stonesToAdd, type, currentCount, true);
+                        pit.insertAdjacentHTML('beforeend', newStonesHTML);
+                    }
+                    const countLabel = document.getElementById(`count-${i}`);
+                    if (countLabel) countLabel.innerText = targetCount;
+                }
+                
+                await sleep(400); 
+                viewIndex--; board = [...targetState.boardState]; currentPlayer = targetState.playerState;
+                document.getElementById('ai-explanation').innerText = targetState.explanationText;
+                
+                isAnimating = false; render(); updateNavButtons();
+            }
+        }
+
+        async function viewNext() {
+            if (viewIndex < gameHistory.length - 1 && !isAnimating) {
+                let targetState = gameHistory[viewIndex + 1]; let move = targetState.playedMove;
+                document.getElementById('status').innerText = `[REVIEW MODE] Replaying Turn ${viewIndex + 1}...`;
+                document.getElementById('ai-explanation').innerText = targetState.explanationText;
+                
+                await executePlay(move, true);
+                viewIndex++; board = [...targetState.boardState]; currentPlayer = targetState.playerState;
+                render(); updateNavButtons();
+            }
+        }
+
+        function updateNavButtons() {
+            const btnPrev = document.getElementById('btn-prev'); const btnNext = document.getElementById('btn-next');
+            btnPrev.disabled = (viewIndex === 0 || isAnimating);
+            btnNext.disabled = (viewIndex === gameHistory.length - 1 || isAnimating);
+        }
+
+        function getScatterStones(count, type, startIndex = 0, isFadeIn = false) {
+            let html = '';
+            for (let i = 0; i < count; i++) {
+                let actualIndex = startIndex + i;
+                let colorClass = stoneColors[actualIndex % stoneColors.length];
+                let rand1 = Math.sin((actualIndex + 1) * 12.9898) * 43758.5453; rand1 = rand1 - Math.floor(rand1);
+                let rand2 = Math.sin((actualIndex + 1) * 78.233) * 43758.5453; rand2 = rand2 - Math.floor(rand2);
+                let offsetX = 0, offsetY = 0;
+                
+                if (type === 'pit') { offsetX = (rand1 - 0.5) * 30; offsetY = (rand2 - 0.5) * 30; } 
+                else if (type === 'store') { offsetX = (rand1 - 0.5) * 180; offsetY = (rand2 - 0.5) * 40; } 
+                else if (type === 'hand') { offsetX = (rand1 - 0.5) * 15; offsetY = (rand2 - 0.5) * 15; }
+                
+                let fadeClass = isFadeIn ? ' fade-in-stone' : '';
+                html += `<div class="stone ${colorClass}${fadeClass}" style="left: calc(50% - 6px + ${offsetX}px); top: calc(50% - 6px + ${offsetY}px);"></div>`;
+            }
+            return html;
+        }
+
+        function render() {
+            let isReviewing = viewIndex < gameHistory.length - 1;
+
+            for (let i = 0; i < 14; i++) {
+                const pit = document.getElementById(`pit-${i}`);
+                const countLabel = document.getElementById(`count-${i}`);
+                let type = (i === 6 || i === 13) ? 'store' : 'pit';
+                
+                pit.innerHTML = getScatterStones(board[i], type);
+                if (countLabel) countLabel.innerText = board[i];
+
+                if (isReviewing || isAnimating) {
+                    pit.classList.add('disabled'); 
+                } else if (i !== 6 && i !== 13) {
+                    if (board[i] === 0 || currentPlayer === 2 || i > 5) pit.classList.add('disabled');
+                    else pit.classList.remove('disabled');
+                }
+
+                let marker = document.getElementById(`marker-${i}`);
+                if (marker) {
+                    if (isReviewing || marker.innerText === '') marker.style.display = 'none';
+                    else marker.style.display = 'flex';
+                }
+            }
+
+            const status = document.getElementById('status');
+            const explanation = document.getElementById('ai-explanation');
+
+            if (isReviewing) {
+                status.innerText = `[REVIEW MODE] Turn ${viewIndex}`;
+            } else if (!isAnimating) {
+                if (checkGameOver()) {
+                    let p1Score = board[6]; let p2Score = board[13];
+                    if (p1Score > p2Score) status.innerText = "Game Over: Opponent Wins!";
+                    else if (p2Score > p1Score) status.innerText = "Game Over: You Win! 🏆";
+                    else status.innerText = "Game Over: It's a Tie! 🤝";
+                    if (gameHistory.length > 0) explanation.innerText = gameHistory[viewIndex].explanationText; 
+                } else {
+                    status.innerText = currentPlayer === 1 ? "Opponent's Turn (Bottom)" : "Your Turn (Top)";
+                    if (gameHistory.length > 0) explanation.innerText = gameHistory[viewIndex].explanationText;
+                }
+            }
+        }
+
+        function moveElementTo(el, targetId) {
+            return new Promise(resolve => {
+                const target = document.getElementById(targetId);
+                const rect = target.getBoundingClientRect();
+                el.style.left = (rect.left + rect.width / 2) + 'px';
+                el.style.top = (rect.top + rect.height / 2) + 'px';
+                target.classList.add('highlight');
+                setTimeout(() => { target.classList.remove('highlight'); resolve(); }, 225); 
+            });
+        }
+
+        function createFlyingHand(sourceIndex, count) {
+            const hand = document.createElement('div'); hand.className = 'hand'; document.body.appendChild(hand);
+            const startEl = document.getElementById(`pit-${sourceIndex}`); const startRect = startEl.getBoundingClientRect();
+            hand.style.left = (startRect.left + startRect.width / 2) + 'px'; hand.style.top = (startRect.top + startRect.height / 2) + 'px';
+            hand.innerHTML = getScatterStones(count, 'hand'); hand.getBoundingClientRect(); return hand;
+        }
+
+        async function handleUserClick(index) {
+            if (currentPlayer !== 1 || isAnimating || viewIndex < gameHistory.length - 1) return;
+            clearMarkers(); 
+            document.getElementById('ai-explanation').innerText = "Opponent made a move. Let's see how you respond...";
+            await executePlay(index, false);
+        }
+
+        async function executePlay(index, isReplay) {
+            isAnimating = true; updateNavButtons(); 
+
+            // UPDATED: Dynamic text appending for consecutive moves from the same pit
+            if (!isReplay && currentPlayer === 2) {
+                aiSequenceCount++;
+                let marker = document.getElementById(`marker-${index}`);
+                if (marker) {
+                    if (marker.innerText === '') {
+                        marker.innerText = aiSequenceCount;
+                    } else {
+                        marker.innerText += ', ' + aiSequenceCount;
+                    }
+                }
+            }
+
+            let stones = board[index]; board[index] = 0; render(); 
+            const hand = createFlyingHand(index, stones); let currentIndex = index;
+
+            while (stones > 0) {
+                currentIndex = (currentIndex + 1) % 14;
+                if (currentPlayer === 1 && currentIndex === 13) continue;
+                if (currentPlayer === 2 && currentIndex === 6) continue;
+
+                await moveElementTo(hand, `pit-${currentIndex}`);
+                board[currentIndex]++; stones--;
+                hand.innerHTML = getScatterStones(stones, 'hand'); render(); 
+                
+                await sleep(150); 
+            }
+            hand.remove();
+
+            if (board[currentIndex] === 1 && isOwnPit(currentIndex)) {
+                let oppositeIndex = 12 - currentIndex;
+                if (board[oppositeIndex] > 0) {
+                    await sleep(300); 
+                    
+                    let capturedStones = board[oppositeIndex] + 1;
+                    let storeIndex = currentPlayer === 1 ? 6 : 13;
+                    
+                    board[currentIndex] = 0; board[oppositeIndex] = 0; render(); 
+                    
+                    const capHand1 = createFlyingHand(currentIndex, 1);
+                    const capHand2 = createFlyingHand(oppositeIndex, capturedStones - 1);
+                    
+                    await Promise.all([
+                        moveElementTo(capHand1, `pit-${storeIndex}`), moveElementTo(capHand2, `pit-${storeIndex}`)
+                    ]);
+                    
+                    if (currentPlayer === 1) board[6] += capturedStones; else board[13] += capturedStones;
+                    capHand1.remove(); capHand2.remove(); render();
+                }
+            }
+
+            let freeTurn = false;
+            if ((currentPlayer === 1 && currentIndex === 6) || (currentPlayer === 2 && currentIndex === 13)) freeTurn = true;
+            else currentPlayer = currentPlayer === 1 ? 2 : 1;
+
+            if (!isReplay) saveState(document.getElementById('ai-explanation').innerText, index);
+
+            isAnimating = false; render(); updateNavButtons();
+
+            if (!isReplay && !checkGameOver() && currentPlayer === 2 && viewIndex === gameHistory.length - 1) {
+                setTimeout(triggerAI, 50);
+            }
+        }
+
+        function isOwnPit(index) {
+            if (currentPlayer === 1) return index >= 0 && index <= 5;
+            if (currentPlayer === 2) return index >= 7 && index <= 12;
+            return false;
+        }
+
+        function checkGameOver() {
+            let p1Empty = true; let p2Empty = true;
+            for (let i = 0; i <= 5; i++) if (board[i] > 0) p1Empty = false;
+            for (let i = 7; i <= 12; i++) if (board[i] > 0) p2Empty = false;
+
+            if (p1Empty || p2Empty) {
+                for (let i = 0; i <= 5; i++) { board[6] += board[i]; board[i] = 0; }
+                for (let i = 7; i <= 12; i++) { board[13] += board[i]; board[i] = 0; }
+                return true; 
+            }
+            return false;
+        }
+        
+        let memoTable = new Map();
+        let abortCalculation = false;
+
+        async function triggerAI() {
+            document.getElementById('ai-explanation').innerText = "Calculating millions of timelines...";
+            await new Promise(r => setTimeout(r, 100)); 
+
+            memoTable.clear();
+            let result = getBestAIMoveIterativeDeepening(board); 
+            
+            document.getElementById('ai-explanation').innerText = "Calculated: " + result.reason;
+            await executePlay(result.move, false);
+        }
+
+        function simulateMove(tempBoard, moveIndex, player) {
+            let b = [...tempBoard]; let stones = b[moveIndex]; b[moveIndex] = 0; let curr = moveIndex;
+            while (stones > 0) {
+                curr = (curr + 1) % 14;
+                if (player === 1 && curr === 13) continue;
+                if (player === 2 && curr === 6) continue;
+                b[curr]++; stones--;
+            }
+
+            let isFreeTurn = false; let captured = 0;
+            if ((player === 1 && curr === 6) || (player === 2 && curr === 13)) {
+                isFreeTurn = true;
+            } else if (b[curr] === 1 && ((player === 1 && curr >= 0 && curr <= 5) || (player === 2 && curr >= 7 && curr <= 12))) {
+                let opp = 12 - curr;
+                if (b[opp] > 0) {
+                    captured = b[opp] + 1;
+                    b[curr] = 0; b[opp] = 0;
+                    if (player === 1) b[6] += captured; else b[13] += captured;
+                }
+            }
+            return { board: b, nextPlayer: isFreeTurn ? player : (player === 1 ? 2 : 1), isFreeTurn: isFreeTurn, captured: captured };
+        }
+
+        function evaluateBoard(b) {
+            let p1Stones = 0; let p2Stones = 0;
+            for (let i = 0; i <= 5; i++) p1Stones += b[i];
+            for (let i = 7; i <= 12; i++) p2Stones += b[i];
+
+            if (p1Stones === 0 || p2Stones === 0) {
+                let finalP1 = b[6] + p1Stones; let finalP2 = b[13] + p2Stones;
+                return (finalP2 - finalP1) * 1000; 
+            }
+            return (b[13] - b[6]) * 100 + (p2Stones - p1Stones) * 2; 
+        }
+
+        function getBestAIMoveIterativeDeepening(currentBoard) {
+            let bestMove = -1;
+            let bestReason = "";
+            let timeLimit = 2500; 
+            let startTime = performance.now();
+            abortCalculation = false;
+
+            for (let currentDepth = 1; currentDepth <= 50; currentDepth++) {
+                let depthBestScore = -Infinity;
+                let depthBestMove = -1;
+                let depthReason = "";
+
+                for (let i = 12; i >= 7; i--) { 
+                    if (currentBoard[i] === 0) continue;
+                    let sim = simulateMove(currentBoard, i, 2);
+                    
+                    let score = minimax(sim.board, currentDepth - 1, -Infinity, Infinity, sim.nextPlayer === 2, startTime, timeLimit);
+                    
+                    if (abortCalculation) break; 
+
+                    if (score > depthBestScore || (score === depthBestScore && sim.isFreeTurn && !depthReason.includes("free move"))) {
+                        depthBestScore = score; depthBestMove = i;
+                        if (sim.isFreeTurn) depthReason = "Engine determined a forced free-move chain to guarantee victory.";
+                        else if (sim.captured > 0) depthReason = "Calculated a future trap to capture the opponent's stones.";
+                        else depthReason = "Optimal path calculated. Securing points and starving the opponent.";
+                    }
+                }
+
+                if (abortCalculation) break; 
+                
+                bestMove = depthBestMove;
+                bestReason = depthReason;
+
+                if (depthBestScore >= 10000) {
+                    bestReason = "Engine calculated a forced mathematical win from this position.";
+                    break; 
+                }
+            }
+            
+            if (bestMove === -1) {
+                for (let i = 12; i >= 7; i--) if (currentBoard[i] > 0) return {move: i, reason: "Safety move."};
+            }
+            return { move: bestMove, reason: bestReason };
+        }
+
+        function minimax(b, depth, alpha, beta, isMaximizingPlayer, startTime, timeLimit) {
+            if (abortCalculation || performance.now() - startTime > timeLimit) {
+                abortCalculation = true;
+                return 0;
+            }
+
+            let p1E = true; let p2E = true;
+            for (let i = 0; i <= 5; i++) if (b[i] > 0) p1E = false;
+            for (let i = 7; i <= 12; i++) if (b[i] > 0) p2E = false;
+
+            if (depth <= 0 || p1E || p2E) return evaluateBoard(b);
+
+            let hash = b.join(',') + (isMaximizingPlayer ? "M" : "m");
+            if (memoTable.has(hash)) return memoTable.get(hash);
+
+            if (isMaximizingPlayer) {
+                let maxE = -Infinity;
+                for (let i = 12; i >= 7; i--) { 
+                    if (b[i] === 0) continue;
+                    let sim = simulateMove(b, i, 2);
+                    let nextDepth = sim.isFreeTurn ? depth : depth - 1;
+                    let e = minimax(sim.board, nextDepth, alpha, beta, sim.nextPlayer === 2, startTime, timeLimit);
+                    maxE = Math.max(maxE, e);
+                    alpha = Math.max(alpha, e);
+                    if (beta <= alpha) break; 
+                }
+                memoTable.set(hash, maxE);
+                return maxE;
+            } else {
+                let minE = Infinity;
+                for (let i = 5; i >= 0; i--) { 
+                    if (b[i] === 0) continue;
+                    let sim = simulateMove(b, i, 1);
+                    let nextDepth = sim.isFreeTurn ? depth : depth - 1;
+                    let e = minimax(sim.board, nextDepth, alpha, beta, sim.nextPlayer === 2, startTime, timeLimit);
+                    minE = Math.min(minE, e);
+                    beta = Math.min(beta, e);
+                    if (beta <= alpha) break; 
+                }
+                memoTable.set(hash, minE);
+                return minE;
+            }
+        }
+
+        initBoardUI();
+    </script>
+</body>
+</html>

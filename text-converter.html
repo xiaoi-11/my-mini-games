@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Emoji Translator Machine ✨</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            --container-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #333;
+            --accent-color: #9c27b0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-color);
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--accent-color);
+            font-size: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            resize: none;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .output-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 2px dashed var(--accent-color);
+            border-radius: 12px;
+            min-height: 100px;
+            font-size: 1.5rem; /* Made emojis slightly bigger */
+            text-align: left;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .btn {
+            margin-top: 20px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
+        }
+
+        .btn:hover {
+            background: #7b1fa2;
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: fixed;
+            z-index: 1;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>✨ Emoji Translator Machine ✨</h1>
+        <p>Type text below. If a word has an emoji, the word vanishes and becomes art! 🎨⬇️</p>
+        
+        <textarea id="inputText" placeholder="Type your message here..."></textarea>
+        
+        <div class="output-box" id="outputText">Your masterpiece will appear here... 🪄</div>
+        
+        <button class="btn" onclick="copyText()">📋 Copy to Clipboard</button>
+    </div>
+
+    <div id="toast" class="toast">✅ Copied to clipboard!</div>
+
+    <script>
+        // The fully updated, purely creative dictionary!
+        const emojiMap = {
+            // Pronouns & Common words
+            "i": "👁️", "you": "🫵", "he": "👨", "she": "👩", "they": "👥", "we": "🤝",
+            "my": "🙋", "your": "🫵", "mine": "🙌", 
+            
+            // Verbs & Actions
+            "love": "❤️", "like": "👍", "hate": "👎", "want": "🤲", "need": "🙏",
+            "think": "🤔", "know": "🧠", "look": "👀", "see": "👁️", "hear": "👂",
+            "listen": "🎧", "speak": "🗣️", "talk": "💬", "say": "💬", "go": "🏃‍♂️",
+            "run": "🏃‍♂️💨", "walk": "🚶", "stop": "🛑", "wait": "⏳", "eat": "🍽️",
+            "drink": "🥤", "sleep": "😴", "cry": "😭", "laugh": "😂", "smile": "😁",
+            "fight": "🥊", "win": "🏆", "lose": "📉", "play": "🎮",
+            
+            // Connectors & Conditionals (Removed "is" and "are")
+            "and": "➕", "plus": "➕", "or": "🔄", "but": "🛑", "because": "👉",
+            "to": "➡️", "from": "⬅️", "up": "⬆️", "down": "⬇️", "right": "➡️", "left": "⬅️",
+            "yes": "✅", "no": "❌", "not": "🚫", "never": "🙅‍♂️", "always": "♾️", 
+            "true": "✅", "false": "❌", "ok": "👌", "okay": "👌",
+
+            // Emotions & Adjectives
+            "happy": "😁", "sad": "😢", "angry": "😡", "mad": "🤬", "crazy": "🤪",
+            "funny": "😂", "hilarious": "🤣", "cool": "😎", "awesome": "🌟",
+            "great": "🏆", "good": "👍", "bad": "👎", "hot": "🔥", "cold": "❄️",
+            "big": "🐘", "huge": "🐋", "small": "🐜", "tiny": "🦠", "fast": "⚡",
+            "slow": "🐢", "smart": "🤓", "dumb": "🥴", "tired": "🥱", "sleepy": "😴",
+            "beautiful": "✨", "ugly": "👹", "scary": "👻", "cute": "🥺",
+
+            // Nouns
+            "world": "🌍", "earth": "🌎", "sun": "☀️", "moon": "🌙", "star": "⭐",
+            "fire": "🔥", "water": "💧", "rain": "🌧️", "snow": "🌨️", "wind": "🌬️",
+            "time": "⏰", "money": "💸", "cash": "💵", "idea": "💡", "book": "📖",
+            "music": "🎵", "song": "🎶", "car": "🚗", "house": "🏠", "home": "🏡",
+            "work": "💼", "school": "🏫", "computer": "💻", "phone": "📱",
+            "food": "🍔", "pizza": "🍕", "coffee": "☕", "beer": "🍺", 
+            "cat": "🐱", "dog": "🐶", "bird": "🐦", "fish": "🐟", "monkey": "🐒",
+            "party": "🎉", "birthday": "🎂", "gift": "🎁", "magic": "🪄",
+
+            // Greetings
+            "hello": "👋", "hi": "👋", "hey": "🙋‍♂️", "bye": "✌️", "goodbye": "👋",
+            "morning": "🌅", "night": "🌃", "thanks": "🙏", "thank": "🙏", "please": "🥺"
+        };
+
+        const inputEl = document.getElementById('inputText');
+        const outputEl = document.getElementById('outputText');
+
+        // Real-time conversion listener
+        inputEl.addEventListener('input', function() {
+            let text = inputEl.value;
+            
+            if (text.trim() === "") {
+                outputEl.innerText = "Your masterpiece will appear here... 🪄";
+                return;
+            }
+
+            // Split by words but keep spaces and punctuation intact
+            let tokens = text.split(/([a-zA-Z0-9']+)/);
+            
+            let result = tokens.map(token => {
+                let lowerToken = token.toLowerCase();
+                
+                // If the word exists in our dictionary, ONLY return the emoji!
+                if (emojiMap[lowerToken]) {
+                    return emojiMap[lowerToken];
+                }
+                
+                // Replace punctuation for extra flair
+                if (token === "?") return "❓";
+                if (token === "!") return "❗";
+                
+                // If no match, return the original text intact
+                return token;
+            }).join('');
+
+            outputEl.innerText = result;
+        });
+
+        // Copy to clipboard function
+        function copyText() {
+            const textToCopy = outputEl.innerText;
+            
+            if (textToCopy === "Your masterpiece will appear here... 🪄" || textToCopy.trim() === "") {
+                return;
+            }
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast();
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        // Show a pop-up when copied
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.className = "toast show";
+            setTimeout(function(){ 
+                toast.className = toast.className.replace("show", ""); 
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

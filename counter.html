@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Screen Tally Counter</title>
+    <style>
+        /* General Page Styling */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            background-color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            cursor: pointer; /* Shows the user they can click anywhere */
+            user-select: none; /* Prevents text highlighting on rapid taps */
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        /* Isolated Reset Button */
+        .btn-reset-isolated {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background-color 0.2s;
+            z-index: 10; /* Ensures it stays on top */
+        }
+
+        .btn-reset-isolated:active {
+            transform: scale(0.95);
+            background-color: #555;
+        }
+
+        /* The Red Counter Body */
+        .tally-device {
+            background: linear-gradient(145deg, #e32636, #cc1122);
+            width: 200px;
+            height: 220px; /* Shortened since the big button is gone */
+            border-radius: 60px;
+            padding: 25px 20px;
+            box-sizing: border-box;
+            box-shadow: 
+                0 15px 25px rgba(0, 0, 0, 0.4), 
+                inset 0 8px 15px rgba(255, 255, 255, 0.3),
+                inset 0 -5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none; /* Let clicks pass through the red body to the document */
+        }
+
+        /* Black Screen Bezel */
+        .screen-bezel {
+            background-color: #1a1a1a;
+            width: 100%;
+            border-radius: 15px;
+            padding: 15px 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: inset 0 3px 8px rgba(0,0,0,0.8);
+        }
+
+        /* Top Label */
+        .label-top {
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        /* LCD Screen */
+        .lcd-screen {
+            background-color: #8da38c; /* Greenish-grey LCD color */
+            width: 90%;
+            height: 50px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0 15px;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 32px;
+            font-weight: bold;
+            color: #2a3328;
+            box-shadow: 
+                inset 0 3px 5px rgba(0, 0, 0, 0.4),
+                inset 0 -1px 2px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Tap Instruction Text */
+        .instruction {
+            color: #ffcccc;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 25px;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <button class="btn-reset-isolated" id="btnReset">RESET</button>
+
+    <div class="tally-device">
+        <div class="screen-bezel">
+            <div class="label-top">TALLY COUNTER</div>
+            <div class="lcd-screen" id="display">0</div>
+        </div>
+        <div class="instruction">TAP ANYWHERE</div>
+    </div>
+
+    <script>
+        let count = 0;
+        const displayElement = document.getElementById('display');
+        const resetButton = document.getElementById('btnReset');
+
+        // Listen for clicks on the entire document body
+        document.body.addEventListener('click', (event) => {
+            // Check if the user clicked the reset button. 
+            // If they did, stop here and don't increment the count.
+            if (event.target === resetButton) {
+                return;
+            }
+            
+            // Otherwise, increment the count and update the screen
+            count++;
+            displayElement.textContent = count;
+        });
+
+        // Listen specifically for clicks on the reset button
+        resetButton.addEventListener('click', () => {
+            count = 0;
+            displayElement.textContent = count;
+        });
+    </script>
+</body>
+</html>

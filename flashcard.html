@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Literature Flashcards - Dark Theme (Complete)</title>
+<style>
+  :root {
+    /* Dark Theme Variables */
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent: #60a5fa;
+    --border-color: #334155;
+    --back-bg: #172554;
+    --back-border: #1e40af;
+    --btn-hover: #334155;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .header h1 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+  }
+
+  .progress {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-top: 5px;
+  }
+
+  .scene {
+    width: 320px;
+    height: 400px;
+    perspective: 1000px;
+    margin-bottom: 30px;
+    touch-action: pan-y;
+  }
+
+  .card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border-radius: 20px;
+  }
+
+  .card.is-flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    text-align: center;
+    border: 1px solid var(--border-color);
+  }
+
+  .card-face-front {
+    color: var(--text-primary);
+  }
+
+  .card-face-back {
+    transform: rotateY(180deg);
+    color: var(--accent);
+    background-color: var(--back-bg);
+    border-color: var(--back-border);
+  }
+
+  .label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    position: absolute;
+    top: 24px;
+  }
+
+  .content {
+    font-size: 1.4rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  button {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+  }
+
+  button:hover {
+    background-color: var(--btn-hover);
+    border-color: var(--text-secondary);
+  }
+
+  button:active {
+    transform: scale(0.95);
+  }
+
+  .hint {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Odia Literature Study</h1>
+  <div class="progress" id="progress">1 / 79</div>
+</div>
+
+<div class="scene" id="scene">
+  <div class="card" id="card">
+    <div class="card-face card-face-front">
+      <div class="label">Literary Work</div>
+      <div class="content" id="front-text">Work Name</div>
+    </div>
+    <div class="card-face card-face-back">
+      <div class="label">Author</div>
+      <div class="content" id="back-text">Author Name</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="prev-btn">← Prev</button>
+  <button id="shuffle-btn">Shuffle Again</button>
+  <button id="next-btn">Next →</button>
+</div>
+
+<div class="hint">Tap card to flip • Swipe left/right • Use arrow keys</div>
+
+<script>
+  // Complete Master List (79 works)
+  const initialCards = [
+    // 1. Fakir Mohan Senapati
+    { front: "Chha Maana Atha Guntha", back: "Fakir Mohan Senapati" },
+    { front: "Mamu", back: "Fakir Mohan Senapati" },
+    { front: "Prayaschita", back: "Fakir Mohan Senapati" },
+    { front: "Lachhama", back: "Fakir Mohan Senapati" },
+    { front: "Rebati", back: "Fakir Mohan Senapati" },
+    { front: "Patent Medicine", back: "Fakir Mohan Senapati" },
+    { front: "Daka Munshi", back: "Fakir Mohan Senapati" },
+    { front: "Garuda Mahapatra", back: "Fakir Mohan Senapati" },
+    { front: "Adharma Bitta", back: "Fakir Mohan Senapati" },
+    { front: "Utkal Bhramanam", back: "Fakir Mohan Senapati" },
+    { front: "Pushpamala", back: "Fakir Mohan Senapati" },
+    { front: "Upahara", back: "Fakir Mohan Senapati" },
+    { front: "Abasare Basare", back: "Fakir Mohan Senapati" },
+    { front: "Puja Phula", back: "Fakir Mohan Senapati" },
+    { front: "Baudhabatara Kavya", back: "Fakir Mohan Senapati" },
+    { front: "Atma Jeebana Charita", back: "Fakir Mohan Senapati" },
+    { front: "Bodhadayini", back: "Fakir Mohan Senapati" },
+    { front: "Balasore Sambad Vahika", back: "Fakir Mohan Senapati" },
+
+    // 2. Gangadhar Meher
+    { front: "Tapaswini", back: "Gangadhar Meher" },
+    { front: "Pranaya Ballari", back: "Gangadhar Meher" },
+    { front: "Kichaka Badha", back: "Gangadhar Meher" },
+    { front: "Indumati", back: "Gangadhar Meher" },
+    { front: "Padmini", back: "Gangadhar Meher" },
+    { front: "Ayodhya Drusya", back: "Gangadhar Meher" },
+    { front: "Rasa-Ratnakara", back: "Gangadhar Meher" },
+    { front: "Utkal Laxmi", back: "Gangadhar Meher" },
+    { front: "Arghya Thali", back: "Gangadhar Meher" },
+    { front: "Kabita Kallola", back: "Gangadhar Meher" },
+    { front: "Krushak Sangita", back: "Gangadhar Meher" },
+    { front: "Ahalya Staba", back: "Gangadhar Meher" },
+    { front: "Bhakti Upahara", back: "Gangadhar Meher" },
+    { front: "Balarama-deba", back: "Gangadhar Meher" },
+
+    // 3. Radhanath Ray
+    { front: "Chilika", back: "Radhanath Ray" },
+    { front: "Mahayatra", back: "Radhanath Ray" },
+    { front: "Chandrabhaga", back: "Radhanath Ray" },
+    { front: "Nandikeshwari", back: "Radhanath Ray" },
+    { front: "Usha", back: "Radhanath Ray" },
+    { front: "Kedara Gouri", back: "Radhanath Ray" },
+    { front: "Parbati", back: "Radhanath Ray" },
+    { front: "Urbasi", back: "Radhanath Ray" },
+    { front: "Mohendra Giri", back: "Radhanath Ray" },
+    { front: "Darabar", back: "Radhanath Ray" },
+    { front: "Tulasi Stabaka", back: "Radhanath Ray" },
+    { front: "Dasaratha Soka", back: "Radhanath Ray" },
+    { front: "Savitri Charita", back: "Radhanath Ray" },
+
+    // 4. Surendra Mohanty
+    { front: "Nilasaila", back: "Surendra Mohanty" },
+    { front: "Niladri Vijaya", back: "Surendra Mohanty" },
+    { front: "Andha Diganta", back: "Surendra Mohanty" },
+    { front: "Kaalantara", back: "Surendra Mohanty" },
+    { front: "Phatamati", back: "Surendra Mohanty" },
+    { front: "Ajibakara Attahasa", back: "Surendra Mohanty" },
+    { front: "Maralara Mrutyu", back: "Surendra Mohanty" },
+    { front: "Mahanagarira Ratri", back: "Surendra Mohanty" },
+    { front: "Mahanirvana", back: "Surendra Mohanty" },
+    { front: "Yadubamsa O Anyaanya Galpa", back: "Surendra Mohanty" },
+    { front: "Rajadhani O Anyaanya Galpa", back: "Surendra Mohanty" },
+    { front: "Krushnachuda", back: "Surendra Mohanty" },
+    { front: "Ruti O Chandra", back: "Surendra Mohanty" },
+    { front: "Sabhyatara Saja", back: "Surendra Mohanty" },
+    { front: "Krushnavenire Sandhya", back: "Surendra Mohanty" },
+    { front: "Patha O Pruthibi", back: "Surendra Mohanty" },
+    { front: "Odia Sahityara Krama Bikasha", back: "Surendra Mohanty" },
+
+    // 5. Gopinath Mohanty
+    { front: "Paraja", back: "Gopinath Mohanty" },
+    { front: "Amrutara Santana", back: "Gopinath Mohanty" },
+    { front: "Mati Matala", back: "Gopinath Mohanty" },
+    { front: "Danapani", back: "Gopinath Mohanty" },
+    { front: "Harijana", back: "Gopinath Mohanty" },
+    { front: "Rahura Chhaya", back: "Gopinath Mohanty" },
+    { front: "Dadi Budha", back: "Gopinath Mohanty" },
+    { front: "Laya Bilaya", back: "Gopinath Mohanty" },
+    { front: "Sapana Mati", back: "Gopinath Mohanty" },
+    { front: "Anam", back: "Gopinath Mohanty" },
+    { front: "Ghasara Phula", back: "Gopinath Mohanty" },
+    { front: "Udanta Khai", back: "Gopinath Mohanty" },
+    { front: "Chhai Alua", back: "Gopinath Mohanty" },
+    { front: "Na' Neti", back: "Gopinath Mohanty" },
+    { front: "Sharatbabunka Gali", back: "Gopinath Mohanty" },
+    { front: "Bapaanka Gali", back: "Gopinath Mohanty" }
+  ];
+
+  let deck = [...initialCards];
+  let currentIndex = 0;
+
+  const card = document.getElementById('card');
+  const frontText = document.getElementById('front-text');
+  const backText = document.getElementById('back-text');
+  const progressText = document.getElementById('progress');
+  const scene = document.getElementById('scene');
+
+  function updateCard() {
+    card.classList.remove('is-flipped');
+    
+    setTimeout(() => {
+      frontText.textContent = deck[currentIndex].front;
+      backText.textContent = deck[currentIndex].back;
+      progressText.textContent = `${currentIndex + 1} / ${deck.length}`;
+    }, 150);
+  }
+
+  function nextCard() {
+    if (currentIndex < deck.length - 1) {
+      currentIndex++;
+      updateCard();
+    }
+  }
+
+  function prevCard() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      updateCard();
+    }
+  }
+
+  function shuffleDeck() {
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    currentIndex = 0;
+    updateCard();
+  }
+
+  card.addEventListener('click', () => {
+    card.classList.toggle('is-flipped');
+  });
+
+  document.getElementById('next-btn').addEventListener('click', nextCard);
+  document.getElementById('prev-btn').addEventListener('click', prevCard);
+  document.getElementById('shuffle-btn').addEventListener('click', shuffleDeck);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') nextCard();
+    if (e.key === 'ArrowLeft') prevCard();
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      card.classList.toggle('is-flipped');
+    }
+  });
+
+  let startX = 0;
+  let isDragging = false;
+
+  scene.addEventListener('pointerdown', (e) => {
+    startX = e.clientX;
+    isDragging = true;
+  });
+
+  scene.addEventListener('pointerup', (e) => {
+    if (!isDragging) return;
+    const endX = e.clientX;
+    const diff = startX - endX;
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextCard(); 
+      else prevCard();           
+    }
+    isDragging = false;
+  });
+
+  // Initialize by shuffling immediately
+  shuffleDeck();
+</script>
+</body>
+</html>

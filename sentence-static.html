@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Reading Trainer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap');
+
+        :root {
+            --bg-color: #f8f9fb;
+            --card-bg: #ffffff;
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --primary-light: rgba(67, 97, 238, 0.08);
+            --text-color: #2d3748;
+            --text-muted: #718096;
+            --border-color: #e2e8f0;
+            --border-focus: #4361ee;
+            --surface: #f7f8fa;
+            --danger: #e53e3e;
+            --success: #38a169;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.08);
+            --radius: 12px;
+            --radius-sm: 8px;
+
+            --font-size: 22px;
+            --line-height-multiplier: 1.65;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: stretch; /* Stretches container to full height */
+            min-height: 100vh;
+            color: var(--text-color);
+            padding-top: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 780px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #setupScreen {
+            flex: 1;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .app-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-color);
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .app-header h1 span {
+            color: var(--primary);
+        }
+
+        .app-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        label.field-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+        }
+
+        textarea, input[type="number"] {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+            background: var(--card-bg);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        textarea:focus, input[type="number"]:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        textarea {
+            height: 160px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .toggle-group {
+            display: flex;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            gap: 4px;
+            border: 1.5px solid var(--border-color);
+        }
+
+        .toggle-group label {
+            flex: 1;
+            text-align: center;
+            padding: 9px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            user-select: none;
+        }
+
+        .toggle-group label:hover {
+            color: var(--text-color);
+        }
+
+        .toggle-group input[type="radio"] {
+            display: none;
+        }
+
+        .toggle-group input[type="radio"]:checked + span {
+            background: var(--card-bg);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+            display: block;
+            padding: 9px 16px;
+            margin: -9px -16px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .field-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            padding: 14px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 16px rgba(67, 97, 238, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text-color);
+            border: 1.5px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #edf0f4;
+            border-color: #cbd5e0;
+        }
+
+        .btn-danger {
+            background: #fff5f5;
+            color: var(--danger);
+            border: 1.5px solid #fed7d7;
+        }
+
+        .btn-danger:hover {
+            background: #fed7d7;
+        }
+
+        #readingScreen { 
+            display: none; 
+            flex-direction: column;
+            flex: 1; /* Fills remaining container height */
+        }
+
+        .reading-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .timer-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            font-variant-numeric: tabular-nums;
+            background: var(--card-bg);
+            padding: 8px 18px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .timer-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .timer-dot.paused {
+            animation: none;
+            background: #cbd5e0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .page-indicator {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .page-indicator strong {
+            color: var(--primary);
+        }
+
+        .reading-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Allows shrinking and prevents overflow escaping */
+        }
+
+        .page-box {
+            flex: 1; /* Stretches to fill available space */
+            width: 100%;
+            background: #fdfdfe;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius) var(--radius) 0 0;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+            padding: 32px 36px;
+        }
+
+        .page-content {
+            font-size: var(--font-size);
+            line-height: var(--line-height-multiplier);
+            font-family: 'Merriweather', Georgia, serif;
+            color: #374151;
+            transition: filter 0.3s ease;
+        }
+
+        .page-content.is-paused {
+            filter: blur(8px);
+            user-select: none;
+        }
+
+        /* === PROGRESS BAR === */
+        .progress-container {
+            flex-shrink: 0;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+        }
+
+        .progress-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 6px;
+            background: #edf2f7;
+            border-radius: 100px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4361ee, #7c3aed);
+            border-radius: 100px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -2px;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border: 2px solid #4361ee;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(67, 97, 238, 0.3);
+            transform: translateX(50%);
+        }
+
+        .progress-percent {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-variant-numeric: tabular-nums;
+            min-width: 38px;
+            text-align: right;
+        }
+
+        .progress-detail {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .reading-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-shrink: 0;
+        }
+
+        .reading-controls .btn {
+            flex: 1;
+        }
+
+        .btn-next {
+            flex: 2 !important;
+            background: var(--primary);
+            color: white;
+        }
+        .btn-next:hover {
+            background: var(--primary-hover);
+        }
+
+        .hidden { display: none !important; }
+
+        .save-notice {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--success);
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .save-notice.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; padding-top: 20px; }
+            .card { padding: 20px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .reading-header { flex-direction: column; gap: 8px; }
+            .reading-controls { flex-direction: column; }
+            .progress-container { flex-wrap: wrap; gap: 8px; }
+            .page-box { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div id="setupScreen">
+            <div class="app-header">
+                <h1>Speed <span>Reader</span></h1>
+                <p>Train your reading speed page by page</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Text Source</div>
+                <div class="form-grid">
+                    <div class="full">
+                        <label class="field-label">Choose Source</label>
+                        <div class="toggle-group">
+                            <label><input type="radio" name="source" value="paste" checked onchange="toggleMode(); saveSettings();"><span>Paste Text</span></label>
+                            <label><input type="radio" name="source" value="generate" onchange="toggleMode(); saveSettings();"><span>Generate Facts</span></label>
+                        </div>
+                    </div>
+
+                    <div id="pasteSection" class="full">
+                        <label class="field-label">Your Text</label>
+                        <textarea id="userText" placeholder="Paste your article, book passage, or any text here..." onchange="saveSettings()"></textarea>
+                    </div>
+
+                    <div id="genSection" class="full hidden">
+                        <label class="field-label">Word Count (approximate)</label>
+                        <input type="number" id="genCount" value="600" min="50" max="5000" step="50" onchange="saveSettings()">
+                        <p class="field-hint">Generates unique facts and knowledge</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="start()">▶ &nbsp;Start Reading</button>
+            <div id="saveNotice" class="save-notice">Settings saved automatically</div>
+        </div>
+
+        <div id="readingScreen">
+            <div class="reading-header">
+                <div class="timer-display">
+                    <div class="timer-dot" id="timerDot"></div>
+                    <span id="timerText">00:00</span>
+                </div>
+                <div class="page-indicator" id="pageIndicator">
+                    Page <strong>1</strong> of 1
+                </div>
+            </div>
+
+            <div class="reading-content-wrapper">
+                <div class="page-box">
+                    <div id="content" class="page-content"></div>
+                </div>
+
+                <div class="progress-container">
+                    <span class="progress-label">Progress</span>
+                    <div class="progress-track">
+                        <div class="progress-fill at-zero" id="progressFill"></div>
+                    </div>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                    <span class="progress-detail" id="progressDetail">0 / 0 words</span>
+                </div>
+            </div>
+
+            <div class="reading-controls">
+                <button class="btn btn-secondary" onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+                <button class="btn btn-next" onclick="nextPage()" id="nextBtn">▶ Next Page</button>
+                <button class="btn btn-danger" onclick="stop()">■ Stop</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ===== KNOWLEDGE GENERATION ENGINE =====
+        const factDatabase = [
+            "Odisha is an eastern Indian state situated on the Bay of Bengal, and its capital is Bhubaneswar, widely known as the Temple City of India.",
+            "The Konark Sun Temple in Odisha is a UNESCO World Heritage site, famous for its magnificent architecture designed in the shape of a colossal chariot.",
+            "Chilika Lake, located in Odisha, is the largest coastal lagoon in India and the second largest in the world, hosting thousands of migratory birds every winter.",
+            "The ancient city of Cuttack in Odisha is known as the Silver City due to its world-famous silver filigree work called Tarakasi.",
+            "Puri, a coastal city in Odisha, is home to the sacred Jagannath Temple and is globally renowned for the annual Ratha Yatra or Chariot Festival.",
+            "Odissi, one of the eight classical dance forms of India, originated in the Hindu temples of Odisha and is known for its graceful postures.",
+            "The Hirakud Dam, built across the Mahanadi River in Odisha, is one of the longest earthen dams in the world.",
+            "Simlipal National Park in Odisha is a tiger reserve and a majestic sanctuary known for its red silk cotton trees and beautiful waterfalls.",
+            "India is the seventh-largest country by land area and the most populous country in the world, located in the continent of Asia.",
+            "New Delhi is the capital of India, a bustling metropolis that serves as the political center of the world's largest democracy.",
+            "The Indian Space Research Organisation, or ISRO, successfully landed the Chandrayaan-3 spacecraft on the south pole of the Moon.",
+            "The Himalayan mountain range forms the northern border of India and is home to some of the highest peaks on the planet.",
+            "The Ganges is the longest river flowing entirely within India and holds immense spiritual significance in Hinduism.",
+            "India is a diverse nation with 28 states and 8 Union Territories, boasting over 19,500 languages and dialects spoken as mother tongues.",
+            "France is a country located in Western Europe, and its capital city is Paris, famous for the Eiffel Tower and the Louvre Museum.",
+            "Japan is an island nation situated in East Asia; its capital is Tokyo, which is one of the most populous and technologically advanced cities globally.",
+            "Brazil is the largest country in both South America and Latin America, and its modern capital city is Brasília, known for its unique urban planning.",
+            "Egypt is a transcontinental country spanning the northeast corner of Africa and southwest corner of Asia, with Cairo serving as its sprawling capital.",
+            "Canada occupies the northern part of North America; its capital is Ottawa, while Toronto remains its largest financial hub.",
+            "Australia is both a country and a continent surrounded by the Indian and Pacific oceans; its capital city is Canberra, not Sydney.",
+            "Germany is located in Central Europe; its capital and largest city is Berlin, known for its rich history and vibrant cultural scene.",
+            "The human adult body consists of 206 bones, but infants are born with around 270 bones, some of which fuse together as they grow.",
+            "Water boils at 100 degrees Celsius or 212 degrees Fahrenheit at sea level, but the boiling point decreases at higher altitudes.",
+            "Light travels at an incredible speed of approximately 299,792 kilometers per second, meaning sunlight takes about eight minutes to reach Earth."
+        ];
+
+        function generateText(targetWords) {
+            targetWords = parseInt(targetWords) || 400;
+            let allWords = [];
+            while (allWords.length < targetWords) {
+                let shuffledFacts = [...factDatabase].sort(() => 0.5 - Math.random());
+                let factBatch = shuffledFacts.join(" ").split(/\s+/);
+                allWords = allWords.concat(factBatch);
+            }
+            return allWords.slice(0, targetWords).join(" ");
+        }
+
+        // ===== DOM REFERENCES =====
+        const setupEl = document.getElementById('setupScreen');
+        const readEl = document.getElementById('readingScreen');
+        const contentEl = document.getElementById('content');
+        const timerEl = document.getElementById('timerText');
+        const timerDot = document.getElementById('timerDot');
+        const pageIndicatorEl = document.getElementById('pageIndicator');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressDetail = document.getElementById('progressDetail');
+
+        // ===== STATE VARIABLES =====
+        const WORDS_PER_PAGE = 220; // Increased to better utilize the expanded text box
+        let pages = [];
+        let currentPageIndex = 0;
+        let totalWordCount = 0;
+
+        let timerInterval = null;
+        let startTime = null;
+        let pausedTime = 0;
+        let isPaused = false;
+        let pauseStart = 0;
+
+        // ===== SETTINGS PERSISTENCE =====
+        const STORAGE_KEY = 'speedReaderSettingsPaginated';
+
+        function saveSettings() {
+            const settings = {
+                source: document.querySelector('input[name="source"]:checked').value,
+                userText: document.getElementById('userText').value,
+                genCount: document.getElementById('genCount').value,
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            const notice = document.getElementById('saveNotice');
+            notice.classList.add('show');
+            setTimeout(() => notice.classList.remove('show'), 1500);
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (!saved) return;
+            try {
+                const s = JSON.parse(saved);
+                if (s.source) {
+                    document.querySelector(`input[name="source"][value="${s.source}"]`).checked = true;
+                    toggleMode();
+                }
+                if (s.userText) document.getElementById('userText').value = s.userText;
+                if (s.genCount) document.getElementById('genCount').value = s.genCount;
+            } catch (e) {
+                console.warn('Failed to load settings:', e);
+            }
+        }
+
+        function toggleMode() {
+            const mode = document.querySelector('input[name="source"]:checked').value;
+            document.getElementById('pasteSection').classList.toggle('hidden', mode !== 'paste');
+            document.getElementById('genSection').classList.toggle('hidden', mode !== 'generate');
+        }
+
+        // ===== TIMER =====
+        function startTimer() {
+            startTime = Date.now();
+            pausedTime = 0;
+            timerInterval = setInterval(updateTimer, 200);
+        }
+
+        function updateTimer() {
+            if (isPaused) return;
+            const elapsed = Date.now() - startTime - pausedTime;
+            timerEl.textContent = formatTime(elapsed);
+        }
+
+        function formatTime(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const min = Math.floor(totalSec / 60);
+            const sec = totalSec % 60;
+            return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function getElapsedMs() {
+            if (!startTime) return 0;
+            return Date.now() - startTime - pausedTime;
+        }
+
+        // ===== PAGINATION LOGIC =====
+        function chunkIntoPages(text) {
+            const words = text.replace(/\s+/g, ' ').trim().split(' ');
+            totalWordCount = words.length;
+            pages = [];
+            
+            for (let i = 0; i < words.length; i += WORDS_PER_PAGE) {
+                pages.push(words.slice(i, i + WORDS_PER_PAGE).join(' '));
+            }
+        }
+
+        function getWordsReadSoFar() {
+            let count = 0;
+            for(let i = 0; i <= currentPageIndex; i++) {
+                if (pages[i]) {
+                    count += pages[i].split(' ').length;
+                }
+            }
+            return count;
+        }
+
+        function renderCurrentPage() {
+            contentEl.innerHTML = pages[currentPageIndex];
+            contentEl.parentElement.scrollTop = 0; // reset scroll to top of page box
+
+            pageIndicatorEl.innerHTML = `Page <strong>${currentPageIndex + 1}</strong> of ${pages.length}`;
+            
+            const wordsRead = getWordsReadSoFar();
+            const pct = Math.round((wordsRead / totalWordCount) * 100);
+
+            progressFill.style.width = pct + '%';
+            progressPercent.textContent = pct + '%';
+            progressDetail.textContent = `${wordsRead} / ${totalWordCount} words`;
+
+            if (currentPageIndex === pages.length - 1) {
+                nextBtn.innerHTML = '✔ Finish';
+                nextBtn.classList.replace('btn-next', 'btn-primary');
+            } else {
+                nextBtn.innerHTML = '▶ Next Page';
+                nextBtn.classList.replace('btn-primary', 'btn-next');
+            }
+        }
+
+        function nextPage() {
+            if (isPaused) return; // Prevent next while paused
+
+            if (currentPageIndex < pages.length - 1) {
+                currentPageIndex++;
+                renderCurrentPage();
+            } else {
+                stop(); // Finished the last page
+            }
+        }
+
+        // ===== CORE ACTIONS =====
+        function start() {
+            const mode = document.querySelector('input[name="source"]:checked').value;
+            let raw = "";
+
+            if (mode === 'paste') {
+                raw = document.getElementById('userText').value;
+                if (!raw.trim()) return alert("Please enter some text first.");
+            } else {
+                raw = generateText(document.getElementById('genCount').value);
+            }
+
+            chunkIntoPages(raw);
+            currentPageIndex = 0;
+
+            setupEl.style.display = 'none';
+            readEl.style.display = 'flex'; // Use flex so it inherits container height
+            
+            isPaused = false;
+            pauseBtn.innerHTML = '⏸ Pause';
+            timerDot.classList.remove('paused');
+            contentEl.classList.remove('is-paused');
+            
+            renderCurrentPage();
+            startTimer();
+            saveSettings();
+        }
+
+        function togglePause() {
+            if (!isPaused) {
+                isPaused = true;
+                pauseBtn.innerHTML = '▶ Resume';
+                timerDot.classList.add('paused');
+                contentEl.classList.add('is-paused');
+                pauseStart = Date.now();
+                nextBtn.style.opacity = '0.5';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                isPaused = false;
+                pauseBtn.innerHTML = '⏸ Pause';
+                timerDot.classList.remove('paused');
+                contentEl.classList.remove('is-paused');
+                pausedTime += (Date.now() - pauseStart);
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        function stop() {
+            const elapsed = getElapsedMs();
+            clearInterval(timerInterval);
+
+            // Calculate stats based on exact words seen on screen
+            const wordsRead = getWordsReadSoFar();
+            const minutes = elapsed / 60000;
+            
+            // Protect against dividing by zero if stopped instantly
+            const avgWpm = minutes > 0.05 ? Math.round(wordsRead / minutes) : 0;
+
+            // Reset view
+            readEl.style.display = 'none';
+            setupEl.style.display = 'block';
+            contentEl.classList.remove('is-paused');
+            nextBtn.style.opacity = '1';
+            nextBtn.style.pointerEvents = 'auto';
+
+            showStatsModal(elapsed, wordsRead, avgWpm);
+        }
+
+        function showStatsModal(elapsed, words, avgWpm) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+                display: flex; justify-content: center; align-items: center;
+                z-index: 1000; animation: fadeIn 0.3s ease;
+            `;
+            overlay.innerHTML = `
+                <div style="
+                    background: white; border-radius: 16px; padding: 36px 44px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.2); text-align: center;
+                    max-width: 420px; width: 90%;
+                ">
+                    <div style="width:48px;height:48px;background:rgba(67,97,238,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <span style="font-size:24px;">📊</span>
+                    </div>
+                    <h2 style="margin: 0 0 4px 0; font-family: Inter, sans-serif; color: #2d3748; font-size: 1.3rem;">Session Complete</h2>
+                    <p style="color: #718096; font-size: 0.85rem; margin-bottom: 24px;">Speed calculated using total words on the pages you completed.</p>
+                    <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 28px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.8rem; font-weight: 700; color: #4361ee; font-family: Inter, sans-serif;">${formatTime(elapsed)}</div>
+                            <div style="font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Duration</div>
+                        </div>
+                        <div style="width: 1px; background: #e2e8f0;"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.8rem; font-weight: 700; color: #4361ee; font-family: Inter, sans-serif;">${words}</div>
+                            <div style="font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Words Read</div>
+                        </div>
+                        <div style="width: 1px; background: #e2e8f0;"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.8rem; font-weight: 700; color: #4361ee; font-family: Inter, sans-serif;">${avgWpm}</div>
+                            <div style="font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Avg WPM</div>
+                        </div>
+                    </div>
+                    <button onclick="this.closest('div[style]').parentElement.remove()" style="
+                        background: #4361ee; color: white; border: none; padding: 12px 32px;
+                        border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+                        font-family: Inter, sans-serif; transition: all 0.2s;
+                    " onmouseover="this.style.background='#3a56d4';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#4361ee';this.style.transform='translateY(0)'">Done</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        // ===== INIT =====
+        loadSettings();
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>

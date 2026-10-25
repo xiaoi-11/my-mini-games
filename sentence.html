@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Reading Trainer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap');
+
+        :root {
+            --bg-color: #f8f9fb;
+            --card-bg: #ffffff;
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --primary-light: rgba(67, 97, 238, 0.08);
+            --text-color: #2d3748;
+            --text-muted: #718096;
+            --border-color: #e2e8f0;
+            --border-focus: #4361ee;
+            --surface: #f7f8fa;
+            --danger: #e53e3e;
+            --success: #38a169;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.08);
+            --radius: 12px;
+            --radius-sm: 8px;
+
+            --font-size: 22px;
+            --line-height-multiplier: 1.65;
+            --line-height-px: calc(var(--font-size) * var(--line-height-multiplier));
+            --view-height: calc(var(--line-height-px) * 14);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            color: var(--text-color);
+            padding-top: 40px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 780px;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .app-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-color);
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .app-header h1 span {
+            color: var(--primary);
+        }
+
+        .app-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        label.field-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            color: var(--text-color);
+        }
+
+        textarea, input[type="number"], select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+            background: var(--card-bg);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        textarea:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        textarea {
+            height: 130px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .toggle-group {
+            display: flex;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            gap: 4px;
+            border: 1.5px solid var(--border-color);
+        }
+
+        .toggle-group label {
+            flex: 1;
+            text-align: center;
+            padding: 9px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            user-select: none;
+        }
+
+        .toggle-group label:hover {
+            color: var(--text-color);
+        }
+
+        .toggle-group input[type="radio"] {
+            display: none;
+        }
+
+        .toggle-group input[type="radio"]:checked + span {
+            background: var(--card-bg);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+            display: block;
+            padding: 9px 16px;
+            margin: -9px -16px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .field-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .speed-section {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+        }
+
+        .speed-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            padding: 14px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 16px rgba(67, 97, 238, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text-color);
+            border: 1.5px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #edf0f4;
+            border-color: #cbd5e0;
+        }
+
+        .btn-danger {
+            background: #fff5f5;
+            color: var(--danger);
+            border: 1.5px solid #fed7d7;
+        }
+
+        .btn-danger:hover {
+            background: #fed7d7;
+        }
+
+        #readingScreen { display: none; }
+
+        .reading-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+
+        .timer-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            font-variant-numeric: tabular-nums;
+            background: var(--card-bg);
+            padding: 8px 18px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .timer-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        .timer-dot.paused {
+            animation: none;
+            background: #cbd5e0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .speed-indicator {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .speed-indicator strong {
+            color: var(--primary);
+        }
+
+        /* Teleprompter wrapper for box + progress */
+        .teleprompter-wrapper {
+            position: relative;
+        }
+
+        .teleprompter-box {
+            height: var(--view-height);
+            width: 100%;
+            background: #fdfdfe;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius) var(--radius) 0 0;
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .teleprompter-content {
+            width: 100%;
+            text-align: left;
+            padding-left: 28px;
+            padding-right: 28px;
+            box-sizing: border-box;
+            font-size: var(--font-size);
+            line-height: var(--line-height-multiplier);
+            font-family: 'Merriweather', Georgia, serif;
+            color: #374151;
+            padding-top: var(--view-height);
+            padding-bottom: var(--view-height);
+            will-change: transform;
+        }
+
+        .focus-bar {
+            position: absolute;
+            top: 40%;
+            left: 0;
+            right: 0;
+            height: var(--line-height-px);
+            background: linear-gradient(90deg, rgba(67, 97, 238, 0.06), rgba(67, 97, 238, 0.1), rgba(67, 97, 238, 0.06));
+            border-top: 1px solid rgba(67, 97, 238, 0.12);
+            border-bottom: 1px solid rgba(67, 97, 238, 0.12);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* === PROGRESS BAR === */
+        .progress-container {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+        }
+
+        .progress-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 6px;
+            background: #edf2f7;
+            border-radius: 100px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4361ee, #7c3aed);
+            border-radius: 100px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -2px;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border: 2px solid #4361ee;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(67, 97, 238, 0.3);
+            transform: translateX(50%);
+        }
+
+        .progress-fill.at-zero::after {
+            display: none;
+        }
+
+        .progress-percent {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-variant-numeric: tabular-nums;
+            min-width: 38px;
+            text-align: right;
+        }
+
+        .progress-detail {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .reading-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .reading-controls .btn {
+            flex: 1;
+        }
+
+        .chunk { display: block; margin: 0; }
+
+        .hidden { display: none !important; }
+
+        .save-notice {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--success);
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .save-notice.show {
+            opacity: 1;
+        }
+
+        #currentSpeedDisplay {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            z-index: 100;
+            font-variant-numeric: tabular-nums;
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; padding-top: 20px; }
+            .card { padding: 20px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .speed-grid { grid-template-columns: 1fr; }
+            .reading-header { flex-direction: column; gap: 8px; }
+            .reading-controls { flex-direction: column; }
+            .progress-container { flex-wrap: wrap; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- SETUP SCREEN -->
+        <div id="setupScreen">
+            <div class="app-header">
+                <h1>Speed <span>Reader</span></h1>
+                <p>Train your reading speed with precision control</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Text Source</div>
+                <div class="form-grid">
+                    <div class="full">
+                        <label class="field-label">Choose Source</label>
+                        <div class="toggle-group">
+                            <label><input type="radio" name="source" value="paste" checked onchange="toggleMode(); saveSettings();"><span>Paste Text</span></label>
+                            <label><input type="radio" name="source" value="generate" onchange="toggleMode(); saveSettings();"><span>Generate Story</span></label>
+                        </div>
+                    </div>
+
+                    <div id="pasteSection" class="full">
+                        <label class="field-label">Your Text</label>
+                        <textarea id="userText" placeholder="Paste your article, book passage, or any text here..." onchange="saveSettings()"></textarea>
+                    </div>
+
+                    <div id="genSection" class="full hidden">
+                        <label class="field-label">Word Count (approximate)</label>
+                        <input type="number" id="genCount" value="200" min="50" max="2000" step="50" onchange="saveSettings()">
+                        <p class="field-hint">Generates unique story paragraphs — never repeated</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Speed Settings</div>
+                <div class="form-grid">
+                    <div class="full">
+                        <label class="field-label">Speed Mode</label>
+                        <div class="toggle-group">
+                            <label><input type="radio" name="speedMode" value="constant" checked onchange="toggleSpeedMode(); saveSettings();"><span>Constant</span></label>
+                            <label><input type="radio" name="speedMode" value="accelerate" onchange="toggleSpeedMode(); saveSettings();"><span>Accelerating</span></label>
+                        </div>
+                    </div>
+
+                    <div id="constantSection" class="full">
+                        <div class="speed-section">
+                            <div class="field-group">
+                                <label class="field-label">Speed (WPM)</label>
+                                <input type="number" id="wpm" value="200" step="25" min="50" max="1500" onchange="saveSettings()">
+                                <p class="field-hint">Words per minute — average adult reads at 200–250 WPM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="accelSection" class="full hidden">
+                        <div class="speed-section">
+                            <div class="speed-grid">
+                                <div class="field-group">
+                                    <label class="field-label">Starting Speed (WPM)</label>
+                                    <input type="number" id="startWpm" value="100" step="25" min="50" max="1500" onchange="saveSettings()">
+                                </div>
+                                <div class="field-group">
+                                    <label class="field-label">Final Speed (WPM)</label>
+                                    <input type="number" id="endWpm" value="400" step="25" min="50" max="1500" onchange="saveSettings()">
+                                </div>
+                            </div>
+                            <p class="field-hint" style="margin-top:10px;">Speed will smoothly accelerate from start to finish</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="start()">▶ &nbsp;Start Reading</button>
+            <div id="saveNotice" class="save-notice">Settings saved automatically</div>
+        </div>
+
+        <!-- READING SCREEN -->
+        <div id="readingScreen">
+            <div class="reading-header">
+                <div class="timer-display">
+                    <div class="timer-dot" id="timerDot"></div>
+                    <span id="timerText">00:00</span>
+                </div>
+                <div class="speed-indicator" id="speedIndicator">
+                    <strong>200</strong> WPM
+                </div>
+            </div>
+
+            <div class="teleprompter-wrapper">
+                <div class="teleprompter-box">
+                    <div class="focus-bar"></div>
+                    <div id="content" class="teleprompter-content"></div>
+                </div>
+
+                <!-- PROGRESS BAR -->
+                <div class="progress-container">
+                    <span class="progress-label">Progress</span>
+                    <div class="progress-track">
+                        <div class="progress-fill at-zero" id="progressFill"></div>
+                    </div>
+                    <span class="progress-percent" id="progressPercent">0%</span>
+                    <span class="progress-detail" id="progressDetail">0 / 0 words</span>
+                </div>
+            </div>
+
+            <div class="reading-controls">
+                <button class="btn btn-secondary" onclick="togglePause()" id="pauseBtn">⏸ Pause</button>
+                <button class="btn btn-danger" onclick="stop()">■ Stop</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="currentSpeedDisplay"></div>
+
+    <script>
+        // ===== STORY GENERATION ENGINE =====
+        const storyBank = {
+            openings: [
+                "In a small village nestled between two great mountains, {character} discovered something extraordinary.",
+                "The year was {year}, and the world was on the brink of a transformation nobody could have predicted.",
+                "It all began on a {weather} morning when {character} received a mysterious letter.",
+                "Deep beneath the ocean floor, scientists had uncovered evidence of {discovery}.",
+                "The library had been closed for decades, but {character} found the door slightly ajar.",
+                "Nobody believed {character} when they spoke about what happened that {season}.",
+                "The train departed exactly at midnight, carrying only {number} passengers into the darkness.",
+                "At the edge of the known world, where maps showed nothing but blank space, {character} stood alone.",
+                "The experiment was never supposed to work, yet the results changed everything we knew about {subject}.",
+                "Three generations of the same family had guarded this secret, until {character} decided to reveal it."
+            ],
+            middles: [
+                "The path ahead was uncertain, but turning back was no longer an option. Every step forward revealed new challenges that tested not just physical endurance but mental resilience as well.",
+                "Research conducted over the past decade has shown that human memory is far more complex than previously understood. Our brains constantly reconstruct memories each time we recall them, subtly altering details with every retrieval.",
+                "The forest canopy blocked most of the sunlight, creating a twilight world where strange plants thrived. Bioluminescent mushrooms lined the trail, casting an eerie blue glow across the damp earth.",
+                "Economic historians have long debated the factors that lead to the rise and fall of great civilizations. While natural resources play a critical role, it is often the quality of institutions and governance that determines long-term prosperity.",
+                "She spent three years perfecting the technique, failing hundreds of times before achieving a single success. That one success, however, was enough to prove that the theory was sound and that further investment was justified.",
+                "The architecture of the ancient city revealed a sophisticated understanding of mathematics and astronomy. Buildings were aligned with celestial events, and water channels demonstrated knowledge of fluid dynamics that would not be rediscovered for centuries.",
+                "Communication between the two groups had broken down completely, leading to misunderstandings that escalated into open conflict. Only when a neutral mediator was brought in did both sides realize they had been working toward the same goal all along.",
+                "The migration patterns of monarch butterflies remain one of nature's most remarkable phenomena. These fragile creatures travel thousands of miles across continents, navigating with a precision that rivals the most advanced GPS technology.",
+                "Progress in renewable energy technology has accelerated dramatically in recent years. Solar panel efficiency has more than doubled while costs have fallen by over ninety percent, making clean energy increasingly competitive with fossil fuels.",
+                "The old clockmaker worked in silence, surrounded by hundreds of timepieces that ticked and tocked in overlapping rhythms. Each clock told a different time, yet somehow the overall effect was harmonious rather than chaotic.",
+                "Philosophers have grappled with the nature of consciousness for millennia without reaching a definitive answer. Modern neuroscience has added new tools to the investigation, but the fundamental mystery remains as deep as ever.",
+                "The market square bustled with activity as merchants from distant lands displayed their wares. Silks from the east lay alongside spices from the south, creating a tapestry of colors and aromas that overwhelmed the senses.",
+                "Learning a new language rewires the brain in fundamental ways, strengthening neural pathways associated with memory, attention, and cognitive flexibility. Bilingual individuals often show delayed onset of age-related cognitive decline.",
+                "The river had carved its path through the limestone over millions of years, creating a canyon so deep that sunlight only reached the bottom for a few hours each day. The walls told a geological story spanning hundreds of millions of years.",
+                "Trust is the foundation upon which all meaningful relationships are built, yet it is remarkably fragile. A single act of betrayal can destroy what took years to construct, and rebuilding requires patience and consistent effort.",
+                "The telescope revealed not just stars but entire galaxies, each containing billions of suns with their own planetary systems. The sheer scale of the universe forced a fundamental reconsideration of humanity's place in the cosmos.",
+                "Agricultural innovations during the medieval period transformed European society in ways that are often underappreciated. The heavy plow, crop rotation, and the horse collar collectively enabled a population boom that fueled urbanization and cultural development.",
+                "She could hear the ocean from her window, its rhythmic waves providing a constant backdrop to her thoughts. There was something about the sea that made problems seem smaller, as if the vast expanse put everything into proper perspective.",
+                "The development of writing systems represented a quantum leap in human civilization. For the first time, knowledge could be preserved beyond the lifespan of any individual, allowing each generation to build upon the accumulated wisdom of its predecessors.",
+                "The algorithm processed millions of data points in seconds, identifying patterns that would have taken human researchers years to discover. Yet the interpretation of these patterns still required human judgment, creativity, and contextual understanding.",
+                "Mountains have always held a special place in human mythology and spirituality. Their imposing presence and the difficulty of reaching their summits made them natural symbols of aspiration, challenge, and transcendence across virtually every culture.",
+                "The chef believed that cooking was both an art and a science. Understanding the chemical reactions that occur during cooking allowed for precision, while intuition and creativity transformed mere nutrition into an experience that engaged all the senses.",
+                "Sleep research has revealed that our brains are remarkably active during rest. Complex processes of memory consolidation, cellular repair, and emotional processing take place during different sleep stages, making quality rest essential for cognitive function.",
+                "The bridge connecting the two communities was more than a feat of engineering. It represented decades of diplomatic effort and mutual compromise, transforming former adversaries into trading partners whose economies became deeply intertwined.",
+                "Photography changed the way humanity perceived itself and the world. For the first time, moments could be frozen in time with mechanical precision, democratizing image-making and creating an entirely new form of historical documentation.",
+                "The coral reef teemed with life, a complex ecosystem where thousands of species coexisted in delicate balance. Each organism played a specific role, and the removal of even a single species could trigger cascading effects throughout the entire system.",
+                "Music has been found to activate more areas of the brain simultaneously than any other human activity. It engages motor systems, emotional centers, language processing regions, and memory networks all at once, creating a uniquely immersive neural experience.",
+                "The desert appeared barren to the untrained eye, but closer inspection revealed a thriving community of organisms perfectly adapted to extreme conditions. Plants with deep root systems, nocturnal animals, and microorganisms all contributed to a surprisingly rich ecosystem.",
+                "International trade routes have shaped the course of human history in profound ways. The Silk Road, the spice trade, and maritime commerce networks facilitated not just the exchange of goods but also the spread of ideas, technologies, and cultural practices.",
+                "The mathematician stared at the equation for hours before the solution suddenly became clear. It was not the result of methodical calculation but rather a flash of insight, the kind of intuitive leap that cannot be taught but only experienced."
+            ],
+            closings: [
+                "And so the journey continued, each day bringing new understanding and fresh perspective on what it means to be alive in this vast and mysterious universe.",
+                "Looking back years later, it became clear that this single moment had changed the course of events in ways that nobody could have anticipated at the time.",
+                "The lessons learned during this period would prove invaluable in the challenges that lay ahead, serving as a foundation for growth and resilience.",
+                "As the sun set on that remarkable day, there was a quiet sense of accomplishment mixed with the knowledge that there was still so much left to discover.",
+                "The story did not end there, of course. Stories never truly end; they simply transform into new beginnings that carry forward the essence of everything that came before.",
+                "In the end, it was not the destination that mattered most but the transformation that occurred along the way. Every obstacle overcome had added strength, and every failure had contributed wisdom.",
+                "The final piece of the puzzle fell into place not with a dramatic revelation but with a quiet click of understanding. Sometimes the most profound truths are also the simplest.",
+                "Time would tell whether these efforts would bear fruit, but the commitment to the cause remained unwavering. Some things are worth pursuing regardless of the outcome.",
+                "And when the noise of the world grew too loud, there was always this memory to return to, a reminder that clarity exists for those who seek it with patience.",
+                "The work was far from finished, but the foundation had been laid with care and precision. What would be built upon it was now a matter of imagination and determination."
+            ],
+            transitions: [
+                "Meanwhile, in a completely different part of the world, events were unfolding that would eventually connect to this story in unexpected ways.",
+                "This principle extends far beyond its original context and has implications for how we understand everything from economics to personal relationships.",
+                "But there was another dimension to this situation that few people recognized at first glance.",
+                "The connection between these seemingly unrelated phenomena became apparent only after years of careful observation and analysis.",
+                "What happened next challenged every assumption that had been made up to that point.",
+                "Parallel to these developments, advances in technology were opening up possibilities that had previously existed only in the realm of science fiction.",
+                "The implications of this discovery rippled outward like waves in a pond, affecting fields as diverse as medicine, architecture, and education.",
+                "Beneath the surface of these events, deeper forces were at work, shaping outcomes in ways that would only become visible in retrospect."
+            ],
+            facts: [
+                "The human brain contains approximately eighty-six billion neurons, each forming thousands of connections with other neurons, creating a network of staggering complexity that gives rise to consciousness, memory, and thought.",
+                "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that were over three thousand years old and still perfectly edible, a testament to the remarkable preservative properties of this natural substance.",
+                "The Great Wall of China is not actually visible from space with the naked eye, contrary to popular belief. This myth has persisted for decades despite being debunked by numerous astronauts who have observed Earth from orbit.",
+                "Octopuses have three hearts, blue blood, and nine brains. Each of their eight arms contains a mini-brain that can act independently, allowing the tentacles to taste, touch, and make basic decisions without input from the central brain.",
+                "A single bolt of lightning contains enough energy to toast roughly one hundred thousand slices of bread. However, capturing and storing this energy remains impractical due to the extremely brief duration and unpredictable nature of lightning strikes.",
+                "The Amazon rainforest produces approximately twenty percent of the world's oxygen and contains an estimated ten percent of all species on Earth. Every year, scientists discover hundreds of previously unknown species within its vast expanse.",
+                "Water can exist in three states simultaneously at a specific temperature and pressure known as the triple point. At exactly zero point zero one degrees Celsius and a pressure of six hundred eleven pascals, water is solid, liquid, and gas all at once.",
+                "The speed of light is approximately three hundred thousand kilometers per second. At this speed, a beam of light could travel around the Earth's equator about seven and a half times in a single second.",
+                "Trees communicate with each other through underground fungal networks sometimes called the wood wide web. Through these networks, trees can share nutrients, send chemical warning signals about insect attacks, and even recognize their own offspring.",
+                "The deepest point in the ocean, the Challenger Deep in the Mariana Trench, reaches nearly eleven thousand meters below sea level. The pressure at this depth is over one thousand times the atmospheric pressure at sea level.",
+                "Human beings share approximately sixty percent of their DNA with bananas. While this may seem surprising, it reflects the fact that all life on Earth shares common biochemical foundations that evolved billions of years ago.",
+                "The total length of blood vessels in the human body is approximately one hundred thousand kilometers, enough to circle the Earth two and a half times. Most of these are tiny capillaries with walls only one cell thick.",
+                "Venus rotates so slowly that a single day on Venus is longer than a Venusian year. It takes two hundred forty-three Earth days to complete one rotation but only two hundred twenty-five Earth days to orbit the Sun.",
+                "The mantis shrimp can see sixteen types of color receptors, compared to the three that humans possess. They can perceive ultraviolet and infrared light, giving them one of the most complex visual systems in the animal kingdom.",
+                "A teaspoon of neutron star material would weigh approximately six billion tons on Earth. Neutron stars are so incredibly dense that their gravity compresses matter to the point where atoms collapse into pure neutron material."
+            ],
+            characters: ["Elena", "Marcus", "Dr. Patel", "the explorer", "the young scientist", "Professor Chen", "the navigator", "an elderly historian", "the apprentice", "Captain Torres", "the cartographer", "a traveling musician", "the architect", "Grandmother Amara", "the lighthouse keeper"],
+            years: ["1847", "1923", "2031", "1776", "1492", "2099", "1564", "1901", "2045", "1688"],
+            weather: ["foggy", "brilliantly sunny", "stormy", "crisp autumn", "humid summer", "bitterly cold", "unusually warm", "overcast", "windswept"],
+            discoveries: ["an ancient civilization previously unknown to history", "a new form of energy that defied conventional physics", "a biological organism capable of surviving in conditions thought to be impossible", "mathematical patterns encoded in natural formations", "evidence of underground rivers containing minerals never before catalogued"],
+            seasons: ["winter", "spring", "summer", "autumn"],
+            numbers: ["three", "seven", "twelve", "forty-two", "a hundred", "five", "nineteen"],
+            subjects: ["quantum mechanics", "human consciousness", "evolution", "climate patterns", "the nature of time", "artificial intelligence", "genetic inheritance"]
+        };
+
+        function fillTemplate(template) {
+            return template
+                .replace(/{character}/g, () => storyBank.characters[Math.floor(Math.random() * storyBank.characters.length)])
+                .replace(/{year}/g, () => storyBank.years[Math.floor(Math.random() * storyBank.years.length)])
+                .replace(/{weather}/g, () => storyBank.weather[Math.floor(Math.random() * storyBank.weather.length)])
+                .replace(/{discovery}/g, () => storyBank.discoveries[Math.floor(Math.random() * storyBank.discoveries.length)])
+                .replace(/{season}/g, () => storyBank.seasons[Math.floor(Math.random() * storyBank.seasons.length)])
+                .replace(/{number}/g, () => storyBank.numbers[Math.floor(Math.random() * storyBank.numbers.length)])
+                .replace(/{subject}/g, () => storyBank.subjects[Math.floor(Math.random() * storyBank.subjects.length)]);
+        }
+
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function generateText(targetWords) {
+            targetWords = parseInt(targetWords) || 200;
+            let paragraphs = [];
+            let totalWords = 0;
+
+            const opening = fillTemplate(storyBank.openings[Math.floor(Math.random() * storyBank.openings.length)]);
+            paragraphs.push(opening);
+            totalWords += opening.split(/\s+/).length;
+
+            const shuffledMiddles = shuffleArray(storyBank.middles);
+            const shuffledFacts = shuffleArray(storyBank.facts);
+            const shuffledTransitions = shuffleArray(storyBank.transitions);
+            let midIdx = 0, factIdx = 0, transIdx = 0;
+
+            while (totalWords < targetWords) {
+                const roll = Math.random();
+                let sentence = "";
+                if (roll < 0.15 && transIdx < shuffledTransitions.length) {
+                    sentence = shuffledTransitions[transIdx++];
+                } else if (roll < 0.45 && factIdx < shuffledFacts.length) {
+                    sentence = shuffledFacts[factIdx++];
+                } else if (midIdx < shuffledMiddles.length) {
+                    sentence = shuffledMiddles[midIdx++];
+                } else if (factIdx < shuffledFacts.length) {
+                    sentence = shuffledFacts[factIdx++];
+                } else {
+                    break;
+                }
+                paragraphs.push(sentence);
+                totalWords += sentence.split(/\s+/).length;
+            }
+
+            const closing = storyBank.closings[Math.floor(Math.random() * storyBank.closings.length)];
+            paragraphs.push(closing);
+
+            return paragraphs.join(" ");
+        }
+
+        // ===== DOM REFERENCES =====
+        const setupEl = document.getElementById('setupScreen');
+        const readEl = document.getElementById('readingScreen');
+        const contentEl = document.getElementById('content');
+        const timerEl = document.getElementById('timerText');
+        const timerDot = document.getElementById('timerDot');
+        const speedIndicatorEl = document.getElementById('speedIndicator');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const currentSpeedDisplay = document.getElementById('currentSpeedDisplay');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressDetail = document.getElementById('progressDetail');
+
+        let timerInterval = null;
+        let startTime = null;
+        let pausedTime = 0;
+        let isPaused = false;
+        let animationFrame = null;
+        let totalWordCount = 0;
+        let accelState = null;
+        let progressInterval = null;
+        let scrollTotalDistance = 0;
+
+        // ===== SETTINGS PERSISTENCE =====
+        const STORAGE_KEY = 'speedReaderSettings';
+
+        function saveSettings() {
+            const settings = {
+                source: document.querySelector('input[name="source"]:checked').value,
+                userText: document.getElementById('userText').value,
+                genCount: document.getElementById('genCount').value,
+                speedMode: document.querySelector('input[name="speedMode"]:checked').value,
+                wpm: document.getElementById('wpm').value,
+                startWpm: document.getElementById('startWpm').value,
+                endWpm: document.getElementById('endWpm').value
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+            const notice = document.getElementById('saveNotice');
+            notice.classList.add('show');
+            setTimeout(() => notice.classList.remove('show'), 1500);
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (!saved) return;
+            try {
+                const s = JSON.parse(saved);
+                if (s.source) {
+                    document.querySelector(`input[name="source"][value="${s.source}"]`).checked = true;
+                    toggleMode();
+                }
+                if (s.userText) document.getElementById('userText').value = s.userText;
+                if (s.genCount) document.getElementById('genCount').value = s.genCount;
+                if (s.speedMode) {
+                    document.querySelector(`input[name="speedMode"][value="${s.speedMode}"]`).checked = true;
+                    toggleSpeedMode();
+                }
+                if (s.wpm) document.getElementById('wpm').value = s.wpm;
+                if (s.startWpm) document.getElementById('startWpm').value = s.startWpm;
+                if (s.endWpm) document.getElementById('endWpm').value = s.endWpm;
+            } catch (e) {
+                console.warn('Failed to load settings:', e);
+            }
+        }
+
+        // ===== UI TOGGLES =====
+        function toggleMode() {
+            const mode = document.querySelector('input[name="source"]:checked').value;
+            document.getElementById('pasteSection').classList.toggle('hidden', mode !== 'paste');
+            document.getElementById('genSection').classList.toggle('hidden', mode !== 'generate');
+        }
+
+        function toggleSpeedMode() {
+            const mode = document.querySelector('input[name="speedMode"]:checked').value;
+            document.getElementById('constantSection').classList.toggle('hidden', mode !== 'constant');
+            document.getElementById('accelSection').classList.toggle('hidden', mode !== 'accelerate');
+        }
+
+        // ===== TEXT CHUNKING =====
+        function chunkText(text) {
+            const words = text.replace(/\s+/g, ' ').trim().split(' ');
+            totalWordCount = words.length;
+            let html = '';
+            for (let i = 0; i < words.length; i += 6) {
+                html += `<div class="chunk">${words.slice(i, i + 6).join(' ')}</div>`;
+            }
+            return html;
+        }
+
+        function measureLineHeight() {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = "Test line";
+            tempDiv.className = "chunk";
+            contentEl.appendChild(tempDiv);
+            const h = tempDiv.offsetHeight;
+            contentEl.removeChild(tempDiv);
+            return h;
+        }
+
+        // ===== TIMER =====
+        function startTimer() {
+            startTime = Date.now();
+            pausedTime = 0;
+            timerInterval = setInterval(updateTimer, 200);
+        }
+
+        function updateTimer() {
+            if (isPaused) return;
+            const elapsed = Date.now() - startTime - pausedTime;
+            timerEl.textContent = formatTime(elapsed);
+        }
+
+        function formatTime(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const min = Math.floor(totalSec / 60);
+            const sec = totalSec % 60;
+            return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        }
+
+        function getElapsedMs() {
+            if (!startTime) return 0;
+            return Date.now() - startTime - pausedTime;
+        }
+
+        // ===== PROGRESS TRACKING =====
+        function getCurrentScrollPosition() {
+            const computed = getComputedStyle(contentEl);
+            const matrix = new DOMMatrix(computed.transform);
+            return Math.abs(matrix.m42); // current translateY (positive)
+        }
+
+        function updateProgress() {
+            if (scrollTotalDistance <= 0) return;
+
+            const currentPos = getCurrentScrollPosition();
+            // The meaningful content starts after the initial padding (viewHeight)
+            // and ends before the trailing padding
+            const viewHeight = contentEl.closest('.teleprompter-box').offsetHeight;
+            const textStart = viewHeight; // padding-top offset
+            const textEnd = scrollTotalDistance - viewHeight; // before padding-bottom
+            const textDistance = textEnd - textStart;
+
+            let progress = 0;
+            if (textDistance > 0) {
+                progress = Math.max(0, Math.min(1, (currentPos - textStart) / textDistance));
+            }
+            // If we haven't reached the text yet
+            if (currentPos < textStart) progress = 0;
+
+            const pct = Math.round(progress * 100);
+            const wordsRead = Math.round(progress * totalWordCount);
+
+            progressFill.style.width = pct + '%';
+            progressPercent.textContent = pct + '%';
+            progressDetail.textContent = `${wordsRead} / ${totalWordCount} words`;
+
+            if (pct > 0) {
+                progressFill.classList.remove('at-zero');
+            } else {
+                progressFill.classList.add('at-zero');
+            }
+        }
+
+        function startProgressTracking() {
+            progressFill.style.width = '0%';
+            progressFill.classList.add('at-zero');
+            progressPercent.textContent = '0%';
+            progressDetail.textContent = `0 / ${totalWordCount} words`;
+            progressInterval = setInterval(updateProgress, 100);
+        }
+
+        function stopProgressTracking() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+
+        // ===== CORE: START =====
+        function start() {
+            const mode = document.querySelector('input[name="source"]:checked').value;
+            let raw = "";
+
+            if (mode === 'paste') {
+                raw = document.getElementById('userText').value;
+                if (!raw.trim()) return alert("Please enter some text first.");
+            } else {
+                raw = generateText(document.getElementById('genCount').value);
+            }
+
+            contentEl.innerHTML = chunkText(raw);
+
+            setupEl.style.display = 'none';
+            readEl.style.display = 'block';
+            isPaused = false;
+            pauseBtn.textContent = '⏸ Pause';
+            timerDot.classList.remove('paused');
+
+            const lineHeight = measureLineHeight();
+            const contentHeight = contentEl.scrollHeight;
+            const distanceToTravel = contentHeight;
+            scrollTotalDistance = distanceToTravel;
+            const wpl = 6;
+
+            const speedMode = document.querySelector('input[name="speedMode"]:checked').value;
+
+            contentEl.style.transition = 'none';
+            contentEl.style.transform = 'translateY(0)';
+            void contentEl.offsetWidth;
+
+            if (speedMode === 'constant') {
+                const wpm = parseInt(document.getElementById('wpm').value);
+                const linesPerMin = wpm / wpl;
+                const pixelsPerSecond = (linesPerMin * lineHeight) / 60;
+                const duration = distanceToTravel / pixelsPerSecond;
+
+                speedIndicatorEl.innerHTML = `<strong>${wpm}</strong> WPM — Constant`;
+                currentSpeedDisplay.style.display = 'none';
+
+                contentEl.style.transition = `transform ${duration}s linear`;
+                contentEl.style.transform = `translateY(-${distanceToTravel}px)`;
+
+                accelState = null;
+                startTimer();
+                startProgressTracking();
+
+            } else {
+                const startWpm = parseInt(document.getElementById('startWpm').value);
+                const endWpm = parseInt(document.getElementById('endWpm').value);
+
+                speedIndicatorEl.innerHTML = `<strong>${startWpm}</strong> → <strong>${endWpm}</strong> WPM`;
+                currentSpeedDisplay.style.display = 'block';
+
+                const v0_pps = (startWpm / wpl * lineHeight) / 60;
+                const vf_pps = (endWpm / wpl * lineHeight) / 60;
+                const totalDuration = (2 * distanceToTravel) / (v0_pps + vf_pps);
+
+                accelState = {
+                    v0: v0_pps,
+                    vf: vf_pps,
+                    v0_wpm: startWpm,
+                    vf_wpm: endWpm,
+                    totalDuration: totalDuration,
+                    totalDistance: distanceToTravel,
+                    startTimestamp: null,
+                    currentPosition: 0,
+                    lineHeight: lineHeight,
+                    wpl: wpl
+                };
+
+                startTimer();
+                startProgressTracking();
+                animationFrame = requestAnimationFrame(accelStep);
+            }
+
+            saveSettings();
+        }
+
+        // ===== ACCELERATION ANIMATION =====
+        function accelStep(timestamp) {
+            if (!accelState) return;
+
+            if (accelState.startTimestamp === null) {
+                accelState.startTimestamp = timestamp;
+            }
+
+            if (isPaused) {
+                animationFrame = requestAnimationFrame(accelStep);
+                return;
+            }
+
+            const elapsed = (timestamp - accelState.startTimestamp) / 1000;
+            const T = accelState.totalDuration;
+            const v0 = accelState.v0;
+            const vf = accelState.vf;
+
+            if (elapsed >= T) {
+                contentEl.style.transform = `translateY(-${accelState.totalDistance}px)`;
+                currentSpeedDisplay.style.display = 'none';
+                updateProgress();
+                return;
+            }
+
+            const position = v0 * elapsed + (vf - v0) * elapsed * elapsed / (2 * T);
+            contentEl.style.transform = `translateY(-${Math.min(position, accelState.totalDistance)}px)`;
+
+            const currentV = v0 + (vf - v0) * (elapsed / T);
+            const currentWpm = Math.round((currentV * 60) / accelState.lineHeight * accelState.wpl);
+            currentSpeedDisplay.textContent = `${currentWpm} WPM`;
+            speedIndicatorEl.innerHTML = `<strong>${currentWpm}</strong> WPM`;
+
+            if (position < accelState.totalDistance) {
+                animationFrame = requestAnimationFrame(accelStep);
+            } else {
+                currentSpeedDisplay.style.display = 'none';
+            }
+        }
+
+        // ===== PAUSE =====
+        let pauseStart = 0;
+
+        function togglePause() {
+            if (!isPaused) {
+                isPaused = true;
+                pauseBtn.textContent = '▶ Resume';
+                timerDot.classList.add('paused');
+                pauseStart = Date.now();
+
+                if (!accelState) {
+                    const computed = getComputedStyle(contentEl);
+                    const matrix = new DOMMatrix(computed.transform);
+                    const currentY = matrix.m42;
+                    contentEl.style.transition = 'none';
+                    contentEl.style.transform = `translateY(${currentY}px)`;
+                }
+            } else {
+                isPaused = false;
+                pauseBtn.textContent = '⏸ Pause';
+                timerDot.classList.remove('paused');
+                const pauseDuration = Date.now() - pauseStart;
+                pausedTime += pauseDuration;
+
+                if (!accelState) {
+                    const computed = getComputedStyle(contentEl);
+                    const matrix = new DOMMatrix(computed.transform);
+                    const currentY = matrix.m42;
+
+                    const wpm = parseInt(document.getElementById('wpm').value);
+                    const lineHeight = measureLineHeight();
+                    const wpl = 6;
+                    const pixelsPerSecond = (wpm / wpl * lineHeight) / 60;
+
+                    const contentHeight = contentEl.scrollHeight;
+                    const remaining = contentHeight + currentY;
+                    const remainingDuration = remaining / pixelsPerSecond;
+
+                    void contentEl.offsetWidth;
+                    contentEl.style.transition = `transform ${remainingDuration}s linear`;
+                    contentEl.style.transform = `translateY(-${contentHeight}px)`;
+                } else {
+                    accelState.startTimestamp += pauseDuration;
+                }
+            }
+        }
+
+        // ===== STOP =====
+        function stop() {
+            const elapsed = getElapsedMs();
+            clearInterval(timerInterval);
+            stopProgressTracking();
+
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            accelState = null;
+
+            contentEl.style.transition = 'none';
+            contentEl.style.transform = 'translateY(0)';
+            currentSpeedDisplay.style.display = 'none';
+
+            readEl.style.display = 'none';
+            setupEl.style.display = 'block';
+
+            const minutes = elapsed / 60000;
+            const avgWpm = minutes > 0 ? Math.round(totalWordCount / minutes) : 0;
+
+            showStatsModal(elapsed, totalWordCount, avgWpm);
+        }
+
+        function showStatsModal(elapsed, words, avgWpm) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+                display: flex; justify-content: center; align-items: center;
+                z-index: 1000; animation: fadeIn 0.3s ease;
+            `;
+            overlay.innerHTML = `
+                <div style="
+                    background: white; border-radius: 16px; padding: 36px 44px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.2); text-align: center;
+                    max-width: 420px; width: 90%;
+                ">
+                    <div style="width:48px;height:48px;background:rgba(67,97,238,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <span style="font-size:24px;">📊</span>
+                    </div>
+                    <h2 style="margin: 0 0 4px 0; font-family: Inter, sans-serif; color: #2d3748; font-size: 1.3rem;">Session Complete</h2>
+                    <p style="color: #718096; font-size: 0.85rem; margin-bottom: 24px;">Here's your reading summary</p>
+                    <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 28px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.8rem; font-weight: 700; color: #4361ee; font-family: Inter, sans-serif;">${formatTime(elapsed)}</div>
+                            <div style="font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Duration</div>
+                        </div>
+                        <div style="width: 1px; background: #e2e8f0;"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.8rem; font-weight: 700; color: #4361ee; font-family: Inter, sans-serif;">${words}</div>
+                            <div style="font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Words</div>
+                        </div>
+                        <div style="width: 1px; background: #e2e8f0;"></div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.8rem; font-weight: 700; color: #4361ee; font-family: Inter, sans-serif;">${avgWpm}</div>
+                            <div style="font-size: 0.7rem; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Avg WPM</div>
+                        </div>
+                    </div>
+                    <button onclick="this.closest('div[style]').parentElement.remove()" style="
+                        background: #4361ee; color: white; border: none; padding: 12px 32px;
+                        border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+                        font-family: Inter, sans-serif; transition: all 0.2s;
+                    " onmouseover="this.style.background='#3a56d4';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#4361ee';this.style.transform='translateY(0)'">Done</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        // ===== INIT =====
+        loadSettings();
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
